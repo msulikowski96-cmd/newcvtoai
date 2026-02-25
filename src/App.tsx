@@ -25,12 +25,21 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import * as pdfjs from 'pdfjs-dist';
-import { analyzeCV, generateCoverLetter, generateInterviewQuestions, CVAnalysis } from './services/gemini';
+import { 
+  analyzeCV, 
+  generateCoverLetter, 
+  generateInterviewQuestions, 
+  analyzeSkillsGap,
+  optimizeLinkedIn,
+  CVAnalysis,
+  SkillsGap,
+  LinkedInOptimization
+} from './services/gemini';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
-type Tab = 'analyze' | 'cover-letter' | 'interview';
+type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin';
 
 declare global {
   interface Window {
@@ -53,6 +62,8 @@ export default function App() {
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
   const [interviewQuestions, setInterviewQuestions] = useState<string[] | null>(null);
+  const [skillsGap, setSkillsGap] = useState<SkillsGap | null>(null);
+  const [linkedIn, setLinkedIn] = useState<LinkedInOptimization | null>(null);
 
   useEffect(() => {
     const checkKey = async () => {
@@ -149,6 +160,40 @@ export default function App() {
       const result = await generateInterviewQuestions(cvText, jobDescription);
       setInterviewQuestions(result);
       setActiveTab('interview');
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error && error.message.includes("Requested entity was not found")) {
+        setHasKey(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateRoadmap = async () => {
+    if (!cvText || !jobDescription || !hasKey) return;
+    setIsLoading(true);
+    try {
+      const result = await analyzeSkillsGap(cvText, jobDescription);
+      setSkillsGap(result);
+      setActiveTab('roadmap');
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error && error.message.includes("Requested entity was not found")) {
+        setHasKey(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOptimizeLinkedIn = async () => {
+    if (!cvText || !hasKey) return;
+    setIsLoading(true);
+    try {
+      const result = await optimizeLinkedIn(cvText);
+      setLinkedIn(result);
+      setActiveTab('linkedin');
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
@@ -313,6 +358,24 @@ export default function App() {
                 Interview Prep
               </button>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleGenerateRoadmap}
+                disabled={isLoading || !cvText || !jobDescription}
+                className="py-3 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              >
+                {isLoading && activeTab === 'roadmap' ? <Loader2 className="animate-spin" size={18} /> : <ChevronRight size={18} />}
+                Career Roadmap
+              </button>
+              <button
+                onClick={handleOptimizeLinkedIn}
+                disabled={isLoading || !cvText}
+                className="py-3 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              >
+                {isLoading && activeTab === 'linkedin' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                LinkedIn Optimizer
+              </button>
+            </div>
           </div>
         </div>
 
@@ -320,12 +383,12 @@ export default function App() {
         <div className="lg:col-span-7">
           <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 h-full flex flex-col overflow-hidden">
             {/* Tabs */}
-            <div className="flex border-b border-zinc-200">
-              {(['analyze', 'cover-letter', 'interview'] as Tab[]).map((tab) => (
+            <div className="flex border-b border-zinc-200 overflow-x-auto no-scrollbar">
+              {(['analyze', 'cover-letter', 'interview', 'roadmap', 'linkedin'] as Tab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-4 text-sm font-semibold capitalize transition-all relative ${
+                  className={`flex-none px-6 py-4 text-sm font-semibold capitalize transition-all relative ${
                     activeTab === tab ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
                   }`}
                 >
@@ -514,6 +577,155 @@ export default function App() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'roadmap' && (
+                  <motion.div
+                    key="roadmap"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    {!skillsGap ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center py-20 text-zinc-400">
+                        <ChevronRight size={48} className="mb-4 opacity-20" />
+                        <p className="text-lg font-medium">No roadmap yet</p>
+                        <p className="text-sm">Identify skill gaps and get a learning path</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
+                          <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-2">Overall Match</h3>
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1 h-3 bg-zinc-200 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${skillsGap.matchPercentage}%` }}
+                                className="h-full bg-zinc-900"
+                              />
+                            </div>
+                            <span className="text-2xl font-bold">{skillsGap.matchPercentage}%</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-zinc-900 flex items-center gap-2">
+                            <AlertCircle size={18} className="text-amber-500" />
+                            Missing Skills & Gaps
+                          </h4>
+                          <div className="grid grid-cols-1 gap-3">
+                            {skillsGap.missingSkills.map((s, i) => (
+                              <div key={i} className="p-4 bg-white border border-zinc-200 rounded-xl flex items-start gap-3">
+                                <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${
+                                  s.importance === 'high' ? 'bg-red-100 text-red-700' :
+                                  s.importance === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                  'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {s.importance}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-sm">{s.skill}</p>
+                                  <p className="text-xs text-zinc-500">{s.reason}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-zinc-900 flex items-center gap-2">
+                            <Lightbulb size={18} className="text-emerald-500" />
+                            Recommended Learning Path
+                          </h4>
+                          <div className="space-y-3">
+                            {skillsGap.learningPath.map((step, i) => (
+                              <div key={i} className="flex gap-4 p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                                <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                  {i + 1}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-emerald-900">{step.step}</p>
+                                  <div className="flex gap-3 mt-1">
+                                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded uppercase">{step.resourceType}</span>
+                                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded uppercase">{step.duration}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="p-6 bg-zinc-900 text-zinc-100 rounded-2xl">
+                          <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Career Advice</h4>
+                          <p className="text-sm leading-relaxed italic">"{skillsGap.careerAdvice}"</p>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'linkedin' && (
+                  <motion.div
+                    key="linkedin"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    {!linkedIn ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center py-20 text-zinc-400">
+                        <Sparkles size={48} className="mb-4 opacity-20" />
+                        <p className="text-lg font-medium">LinkedIn Optimizer</p>
+                        <p className="text-sm">Optimize your profile to attract recruiters</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-zinc-900">Headline</h4>
+                            <button onClick={() => copyToClipboard(linkedIn.headline)} className="p-1.5 hover:bg-zinc-100 rounded text-zinc-400"><Copy size={14} /></button>
+                          </div>
+                          <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium">
+                            {linkedIn.headline}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-zinc-900">About Section</h4>
+                            <button onClick={() => copyToClipboard(linkedIn.about)} className="p-1.5 hover:bg-zinc-100 rounded text-zinc-400"><Copy size={14} /></button>
+                          </div>
+                          <div className="p-6 bg-white border border-zinc-200 rounded-xl text-sm leading-relaxed whitespace-pre-wrap">
+                            {linkedIn.about}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-zinc-900">Experience Highlights</h4>
+                          <div className="space-y-2">
+                            {linkedIn.experienceBulletPoints.map((point, i) => (
+                              <div key={i} className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm flex gap-3">
+                                <ChevronRight size={14} className="text-zinc-400 shrink-0 mt-1" />
+                                <span>{point}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-zinc-900">Skills to Highlight</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {linkedIn.skillsToHighlight.map((skill, i) => (
+                              <span key={i} className="px-3 py-1 bg-zinc-900 text-white text-xs font-medium rounded-full">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </>
                     )}

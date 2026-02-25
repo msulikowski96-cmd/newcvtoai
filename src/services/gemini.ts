@@ -12,6 +12,20 @@ export interface CVAnalysis {
   optimizedContent: string;
 }
 
+export interface SkillsGap {
+  matchPercentage: number;
+  missingSkills: { skill: string; importance: 'high' | 'medium' | 'low'; reason: string }[];
+  learningPath: { step: string; resourceType: string; duration: string }[];
+  careerAdvice: string;
+}
+
+export interface LinkedInOptimization {
+  headline: string;
+  about: string;
+  experienceBulletPoints: string[];
+  skillsToHighlight: string[];
+}
+
 const MODEL_NAME = "gemini-3.1-pro-preview";
 
 const SYSTEM_INSTRUCTION = `Jesteś ekspertem świata w optymalizacji CV z 20-letnim doświadczeniem w rekrutacji oraz AI. Masz specjalistyczną wiedzę o:
@@ -148,4 +162,101 @@ export const generateInterviewQuestions = async (cvText: string, jobDescription:
   });
 
   return JSON.parse(response.text || "[]");
+};
+
+export const analyzeSkillsGap = async (cvText: string, jobDescription: string): Promise<SkillsGap> => {
+  const ai = getAI();
+  const prompt = `
+    🎯 ZADANIE: Przeprowadź szczegółową analizę luk kompetencyjnych (Skills Gap Analysis).
+    
+    📋 DANE WEJŚCIOWE:
+    • CV kandydata: ${cvText}
+    • Opis stanowiska: ${jobDescription}
+    
+    Analiza powinna zawierać:
+    1. Procentowe dopasowanie.
+    2. Listę brakujących umiejętności z określeniem ich ważności (high/medium/low) i uzasadnieniem.
+    3. Konkretną ścieżkę nauki (kroki, typy zasobów, szacowany czas).
+    4. Ogólną poradę karierową.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: prompt,
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          matchPercentage: { type: Type.NUMBER },
+          missingSkills: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                skill: { type: Type.STRING },
+                importance: { type: Type.STRING, enum: ["high", "medium", "low"] },
+                reason: { type: Type.STRING }
+              },
+              required: ["skill", "importance", "reason"]
+            }
+          },
+          learningPath: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                step: { type: Type.STRING },
+                resourceType: { type: Type.STRING },
+                duration: { type: Type.STRING }
+              },
+              required: ["step", "resourceType", "duration"]
+            }
+          },
+          careerAdvice: { type: Type.STRING }
+        },
+        required: ["matchPercentage", "missingSkills", "learningPath", "careerAdvice"]
+      },
+    },
+  });
+
+  return JSON.parse(response.text || "{}");
+};
+
+export const optimizeLinkedIn = async (cvText: string): Promise<LinkedInOptimization> => {
+  const ai = getAI();
+  const prompt = `
+    🎯 ZADANIE: Zoptymalizuj profil LinkedIn na podstawie CV.
+    
+    📋 DANE WEJŚCIOWE:
+    • CV kandydata: ${cvText}
+    
+    Wygeneruj:
+    1. Przyciągający nagłówek (Headline).
+    2. Sekcję "O mnie" (About) napisaną w pierwszej osobie, angażującą i profesjonalną.
+    3. Kilka kluczowych punktów do sekcji doświadczenia.
+    4. Listę umiejętności do wyróżnienia.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: prompt,
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          headline: { type: Type.STRING },
+          about: { type: Type.STRING },
+          experienceBulletPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+          skillsToHighlight: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["headline", "about", "experienceBulletPoints", "skillsToHighlight"]
+      },
+    },
+  });
+
+  return JSON.parse(response.text || "{}");
 };
