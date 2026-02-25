@@ -77,7 +77,28 @@ export const analyzeCV = async (cvText: string, jobDescription: string): Promise
     3. PRZEPISZ tylko to co jest w oryginalnym CV, ulepszając sformułowania.
     4. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska.
     5. ZACHOWAJ wszystkie prawdziwe fakty z oryginalnego CV.
-    6. KRYTYCZNY FORMAT: Każde stanowisko musi zaczynać się od "--- STANOWISKO ---".
+
+    STRUKTURA ZOPTYMALIZOWANEGO CV:
+    [PODSUMOWANIE ZAWODOWE]
+    - Stwórz zwięzłe podsumowanie (2-3 zdania) o kluczowych umiejętnościach i doświadczeniu.
+    - Użyj tylko faktów z oryginalnego CV.
+
+    [DOŚWIADCZENIE ZAWODOWE]
+    - KRYTYCZNY FORMAT: Każde stanowisko musi zaczynać się od "--- STANOWISKO ---".
+    - Struktura każdego stanowiska:
+      --- STANOWISKO ---
+      **Nazwa stanowiska**
+      **Nazwa firmy**
+      *Okres pracy (rok-rok)*
+      - Obowiązki (3-4 punkty z konkretnymi czasownikami akcji).
+    - Zachowaj wszystkie firmy, stanowiska i daty z oryginału.
+
+    [WYKSZTAŁCENIE]
+    - Przepisz dokładnie informacje z oryginalnego CV.
+
+    [UMIEJĘTNOŚCI]
+    - Użyj tylko umiejętności wymienionych w oryginalnym CV.
+    - Pogrupuj je logicznie (Techniczne, Komunikacyjne, itp.).
   `;
 
   const response = await ai.models.generateContent({
