@@ -322,7 +322,19 @@ export default function App() {
   };
 
   const handleAnalyze = async () => {
-    if (!cvText || !jobDescription || !hasKey) return;
+    if (!cvText) {
+      alert(language === 'pl' ? 'Proszę najpierw wgrać CV lub wkleić tekst.' : 'Please upload a CV or paste text first.');
+      return;
+    }
+    if (!jobDescription) {
+      alert(language === 'pl' ? 'Proszę wkleić opis stanowiska.' : 'Please paste a job description.');
+      return;
+    }
+    if (!hasKey) {
+      alert(language === 'pl' ? 'Brak klucza API.' : 'API Key is missing.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await analyzeCV(cvText, jobDescription, language);
@@ -330,7 +342,8 @@ export default function App() {
       setActiveTab('analyze');
       if (user) saveToHistory(result);
     } catch (error) {
-      console.error(error);
+      console.error('Analysis error:', error);
+      alert(language === 'pl' ? 'Wystąpił błąd podczas analizy. Sprawdź konsolę lub klucz API.' : 'An error occurred during analysis. Check console or API key.');
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
         setHasKey(false);
       }

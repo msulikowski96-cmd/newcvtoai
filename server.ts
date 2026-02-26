@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
 import bcrypt from "bcryptjs";
 import Database from "better-sqlite3";
 import multer from "multer";
@@ -95,6 +96,15 @@ async function initDb() {
         analysis_json TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL
+      ) WITH (OIDS=FALSE);
+      
+      ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
     `);
   } else {
     await db.exec(`
@@ -143,8 +153,14 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
+  const PgStore = pgSession(session);
+
   app.use(
     session({
+      store: isPostgres ? new PgStore({
+        pool: pgPool!,
+        tableName: 'session'
+      }) : undefined,
       secret: "cv-to-ai-secret-key",
       resave: false,
       saveUninitialized: false,
