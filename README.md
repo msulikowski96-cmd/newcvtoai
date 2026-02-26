@@ -1,20 +1,24 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# CvToAI Deployment Guide
 
-# Run and deploy your AI Studio app
+This project is a React SPA served by an Express backend. It is ready to be deployed to platforms like Render, Koyeb, or Vercel.
 
-This contains everything you need to run your app locally.
+## Deployment Steps (Render/Koyeb)
 
-View your app in AI Studio: https://ai.studio/apps/85719363-6a18-4b1a-a50b-63f002a0e907
+1.  **Connect your Repository**: Connect your GitHub/GitLab repository to your hosting provider.
+2.  **Environment Variables**:
+    *   Set `GEMINI_API_KEY` to your Google Gemini API key.
+3.  **Build Settings**:
+    *   **Build Command**: `npm run build`
+    *   **Start Command**: `npm start`
+4.  **Port**: The application runs on port `3000`.
 
-## Run Locally
+## Local Development
 
-**Prerequisites:**  Node.js
+1.  `npm install`
+2.  `npm run dev`
 
+## Project Structure
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+*   `server.ts`: Express server that serves the frontend and handles routing.
+*   `src/`: React frontend application.
+*   `vite.config.ts`: Vite configuration with Gemini API key injection.

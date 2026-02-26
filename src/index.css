@@ -13,16 +13,16 @@
 }
 
 .markdown-body {
-  @apply text-sm leading-relaxed space-y-4;
+  @apply text-sm leading-relaxed space-y-6;
 }
 
-.markdown-body h1 { @apply text-2xl font-bold mb-4; }
-.markdown-body h2 { @apply text-xl font-bold mb-3; }
-.markdown-body h3 { @apply text-lg font-bold mb-2; }
-.markdown-body p { @apply mb-4; }
-.markdown-body ul { @apply list-disc pl-5 mb-4; }
-.markdown-body ol { @apply list-decimal pl-5 mb-4; }
-.markdown-body li { @apply mb-1; }
+.markdown-body h1 { @apply text-2xl font-bold mb-6 pb-2 border-b border-zinc-200; }
+.markdown-body h2 { @apply text-lg font-bold mb-4 flex items-center gap-2 bg-zinc-50 p-2 rounded-lg border border-zinc-100; }
+.markdown-body h3 { @apply text-base font-bold mb-2 text-zinc-800; }
+.markdown-body p { @apply mb-2; }
+.markdown-body ul { @apply list-none pl-0 mb-4 space-y-2; }
+.markdown-body li { @apply flex items-start gap-2; }
+.markdown-body strong { @apply font-semibold text-zinc-900; }
 .markdown-body code { @apply bg-zinc-100 px-1 rounded font-mono text-xs; }
 .markdown-body pre { @apply bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto mb-4; }
 

@@ -1,30 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { CVAnalysis, SkillsGap, LinkedInOptimization } from "../types";
 
 const getAI = () => {
   return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 };
-
-export interface CVAnalysis {
-  score: number;
-  strengths: string[];
-  weaknesses: string[];
-  suggestions: string[];
-  optimizedContent: string;
-}
-
-export interface SkillsGap {
-  matchPercentage: number;
-  missingSkills: { skill: string; importance: 'high' | 'medium' | 'low'; reason: string }[];
-  learningPath: { step: string; resourceType: string; duration: string }[];
-  careerAdvice: string;
-}
-
-export interface LinkedInOptimization {
-  headline: string;
-  about: string;
-  experienceBulletPoints: string[];
-  skillsToHighlight: string[];
-}
 
 const MODEL_NAME = "gemini-3.1-pro-preview";
 
@@ -78,27 +57,32 @@ export const analyzeCV = async (cvText: string, jobDescription: string): Promise
     4. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska.
     5. ZACHOWAJ wszystkie prawdziwe fakty z oryginalnego CV.
 
-    STRUKTURA ZOPTYMALIZOWANEGO CV:
-    [PODSUMOWANIE ZAWODOWE]
+    STRUKTURA ZOPTYMALIZOWANEGO CV (Używaj Markdown i Emoji dla czytelności):
+    # 📄 CV: [Imię i Nazwisko]
+
+    ## 👤 PODSUMOWANIE ZAWODOWE
     - Stwórz zwięzłe podsumowanie (2-3 zdania) o kluczowych umiejętnościach i doświadczeniu.
     - Użyj tylko faktów z oryginalnego CV.
 
-    [DOŚWIADCZENIE ZAWODOWE]
-    - KRYTYCZNY FORMAT: Każde stanowisko musi zaczynać się od "--- STANOWISKO ---".
+    ## 💼 DOŚWIADCZENIE ZAWODOWE
+    - KRYTYCZNY FORMAT: Każde stanowisko musi zaczynać się od nagłówka poziomu 3 z emoji: ### 🏢 [Nazwa Firmy]
     - Struktura każdego stanowiska:
-      --- STANOWISKO ---
-      **Nazwa stanowiska**
-      **Nazwa firmy**
-      *Okres pracy (rok-rok)*
+      ### 🏢 **Nazwa firmy**
+      **Nazwa stanowiska** | *Okres pracy (rok-rok)*
+      
+      **Kluczowe obowiązki:**
       - Obowiązki (3-4 punkty z konkretnymi czasownikami akcji).
+      - Używaj emoji 🔹 dla punktów.
     - Zachowaj wszystkie firmy, stanowiska i daty z oryginału.
 
-    [WYKSZTAŁCENIE]
+    ## 🎓 WYKSZTAŁCENIE
     - Przepisz dokładnie informacje z oryginalnego CV.
+    - Użyj emoji 🏛️ dla uczelni.
 
-    [UMIEJĘTNOŚCI]
+    ## 🛠️ UMIEJĘTNOŚCI
     - Użyj tylko umiejętności wymienionych w oryginalnym CV.
     - Pogrupuj je logicznie (Techniczne, Komunikacyjne, itp.).
+    - Używaj emoji ✅ dla każdej umiejętności.
   `;
 
   const response = await ai.models.generateContent({

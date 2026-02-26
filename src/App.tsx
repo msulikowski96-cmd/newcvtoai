@@ -20,7 +20,13 @@ import {
   Download,
   Upload,
   FileUp,
-  Key
+  Key,
+  User as UserIcon,
+  LogOut,
+  Settings,
+  Mail,
+  Lock,
+  Camera
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
@@ -31,15 +37,14 @@ import {
   generateInterviewQuestions, 
   analyzeSkillsGap,
   optimizeLinkedIn,
-  CVAnalysis,
-  SkillsGap,
-  LinkedInOptimization
 } from './services/gemini';
+import { User, CVAnalysis, SkillsGap, LinkedInOptimization } from './types';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin';
+type View = 'app' | 'login' | 'register' | 'profile';
 
 declare global {
   interface Window {
@@ -57,7 +62,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [hasKey, setHasKey] = useState<boolean | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [view, setView] = useState<View>('app');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
@@ -65,17 +73,143 @@ export default function App() {
   const [skillsGap, setSkillsGap] = useState<SkillsGap | null>(null);
   const [linkedIn, setLinkedIn] = useState<LinkedInOptimization | null>(null);
 
+  // Auth State
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  // Profile State
+  const [profileName, setProfileName] = useState('');
+  const [profileBio, setProfileBio] = useState('');
+
   useEffect(() => {
-    const checkKey = async () => {
+    const init = async () => {
+      // Check API Key
       if (window.aistudio) {
         const selected = await window.aistudio.hasSelectedApiKey();
         setHasKey(selected);
       } else {
-        setHasKey(true); // Fallback for local dev or if not in AI Studio
+        setHasKey(true);
+      }
+
+      // Check Auth
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+          setProfileName(userData.name);
+          setProfileBio(userData.bio || '');
+        }
+      } catch (e) {
+        console.error("Auth check failed", e);
       }
     };
-    checkKey();
+    init();
   }, []);
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authEmail, password: authPassword, name: authName }),
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+        setView('app');
+      } else {
+        const data = await res.json();
+        setAuthError(data.error || 'Registration failed');
+      }
+    } catch (e) {
+      setAuthError('Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authEmail, password: authPassword }),
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+        setProfileName(userData.name);
+        setProfileBio(userData.bio || '');
+        setView('app');
+      } else {
+        const data = await res.json();
+        setAuthError(data.error || 'Login failed');
+      }
+    } catch (e) {
+      setAuthError('Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+    setView('app');
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: profileName, bio: profileBio }),
+      });
+      if (res.ok) {
+        setUser(prev => prev ? { ...prev, name: profileName, bio: profileBio } : null);
+        alert('Profile updated!');
+      }
+    } catch (e) {
+      alert('Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const { avatar } = await res.json();
+        setUser(prev => prev ? { ...prev, avatar } : null);
+      }
+    } catch (e) {
+      alert('Avatar upload failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSelectKey = async () => {
     if (window.aistudio) {
@@ -258,6 +392,187 @@ export default function App() {
     );
   }
 
+  if (view === 'login' || view === 'register') {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-zinc-200 p-8 space-y-6"
+        >
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-bold text-zinc-900">
+              {view === 'login' ? 'Welcome Back' : 'Create Account'}
+            </h1>
+            <p className="text-zinc-500 text-sm">
+              {view === 'login' ? 'Sign in to access your saved CVs' : 'Join CvToAI to optimize your career'}
+            </p>
+          </div>
+
+          <form onSubmit={view === 'login' ? handleLogin : handleRegister} className="space-y-4">
+            {view === 'register' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-500 uppercase">Full Name</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                  <input
+                    type="text"
+                    required
+                    value={authName}
+                    onChange={(e) => setAuthName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-500 uppercase">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
+                  placeholder="name@example.com"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-500 uppercase">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            {authError && <p className="text-red-500 text-xs font-medium">{authError}</p>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2"
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={18} /> : (view === 'login' ? 'Sign In' : 'Create Account')}
+            </button>
+          </form>
+
+          <div className="text-center">
+            <button 
+              onClick={() => setView(view === 'login' ? 'register' : 'login')}
+              className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+            >
+              {view === 'login' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+            </button>
+          </div>
+          
+          <button 
+            onClick={() => setView('app')}
+            className="w-full text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
+            Continue as Guest
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (view === 'profile' && user) {
+    return (
+      <div className="min-h-screen bg-zinc-50 p-6 flex flex-col">
+        <header className="max-w-4xl mx-auto w-full mb-8 flex items-center justify-between">
+          <button onClick={() => setView('app')} className="flex items-center gap-2 text-zinc-500 hover:text-zinc-900 transition-colors font-semibold">
+            <ChevronRight className="rotate-180" size={20} />
+            Back to App
+          </button>
+          <h1 className="text-xl font-bold">Your Profile</h1>
+          <div className="w-20" /> {/* Spacer */}
+        </header>
+
+        <main className="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1 space-y-6">
+            <div className="bg-white rounded-3xl shadow-sm border border-zinc-200 p-8 text-center space-y-4">
+              <div className="relative inline-block">
+                <div className="w-32 h-32 rounded-full bg-zinc-100 border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon size={48} className="text-zinc-300" />
+                  )}
+                </div>
+                <button 
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-zinc-900 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg hover:scale-110 transition-transform"
+                >
+                  <Camera size={16} />
+                </button>
+                <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{user.name}</h2>
+                <p className="text-sm text-zinc-500">{user.email}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 space-y-6">
+            <section className="bg-white rounded-3xl shadow-sm border border-zinc-200 p-8 space-y-6">
+              <h3 className="text-lg font-bold">Profile Settings</h3>
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-500 uppercase">Display Name</label>
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-zinc-500 uppercase">Bio</label>
+                  <textarea
+                    value={profileBio}
+                    onChange={(e) => setProfileBio(e.target.value)}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all h-32 resize-none"
+                    placeholder="Tell us about yourself..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-8 py-3 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center gap-2"
+                >
+                  {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Save Changes'}
+                </button>
+              </form>
+            </section>
+
+            <section className="bg-white rounded-3xl shadow-sm border border-zinc-200 p-8 space-y-4">
+              <h3 className="text-lg font-bold text-red-600">Danger Zone</h3>
+              <p className="text-sm text-zinc-500">Logging out will end your current session.</p>
+              <button 
+                onClick={handleLogout}
+                className="px-6 py-2 border border-red-200 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-colors flex items-center gap-2"
+              >
+                <LogOut size={18} />
+                Sign Out
+              </button>
+            </section>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -274,8 +589,35 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setView('profile')}
+                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-50 rounded-xl transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-zinc-100 overflow-hidden flex items-center justify-center border border-zinc-200">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon size={16} className="text-zinc-400" />
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-zinc-700 hidden sm:inline">{user.name}</span>
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setView('login')}
+                className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition-all"
+              >
+                Sign In
+              </button>
+            )}
+            
+            <div className="w-px h-6 bg-zinc-200 mx-2" />
+
             <button 
-              onClick={() => { setCvText(''); setJobDescription(''); setAnalysis(null); setCoverLetter(null); setInterviewQuestions(null); }}
+              onClick={() => { setCvText(''); setJobDescription(''); setAnalysis(null); setCoverLetter(null); setInterviewQuestions(null); setSkillsGap(null); setLinkedIn(null); }}
               className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
               title="Clear All"
             >
@@ -484,7 +826,7 @@ export default function App() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-zinc-900 font-semibold">
                               <Sparkles size={18} />
-                              <h4>Optimized Content</h4>
+                              <h4>Optimized CV Content</h4>
                             </div>
                             <button 
                               onClick={() => copyToClipboard(analysis.optimizedContent)}
@@ -493,8 +835,10 @@ export default function App() {
                               <Copy size={16} />
                             </button>
                           </div>
-                          <div className="p-6 bg-zinc-900 text-zinc-100 rounded-2xl font-mono text-sm whitespace-pre-wrap leading-relaxed">
-                            {analysis.optimizedContent}
+                          <div className="p-8 bg-white border border-zinc-200 rounded-2xl shadow-inner min-h-[400px]">
+                            <div className="markdown-body">
+                              <Markdown>{analysis.optimizedContent}</Markdown>
+                            </div>
                           </div>
                         </div>
                       </>
