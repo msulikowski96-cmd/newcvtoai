@@ -163,6 +163,12 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
+  
+  // Trust proxy is required for secure cookies behind a reverse proxy (like Koyeb/Vercel)
+  if (process.env.NODE_ENV === "production") {
+    app.set('trust proxy', 1);
+  }
+
   const PgStore = pgSession(session);
 
   app.use(
@@ -171,7 +177,7 @@ async function startServer() {
         pool: pgPool!,
         tableName: 'session'
       }) : undefined,
-      secret: "cv-to-ai-secret-key",
+      secret: process.env.SESSION_SECRET || "cv-to-ai-secret-key",
       resave: false,
       saveUninitialized: false,
       cookie: {
