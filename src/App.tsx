@@ -1293,16 +1293,19 @@ export default function App() {
                             href={job.link} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className={`p-6 rounded-2xl border transition-all group ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300'}`}
+                            className={`p-6 rounded-2xl border transition-all group block ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300'}`}
                           >
                             <div className="flex justify-between items-start mb-2">
                               <div>
                                 <h4 className="font-bold text-lg group-hover:text-zinc-500 transition-colors">{job.title}</h4>
-                                <p className="text-sm font-medium text-zinc-500">{job.company} • {job.location}</p>
+                                <p className="text-sm font-medium text-zinc-500">
+                                  {job.company} • {job.location}
+                                  {job.date_posted && <span className="ml-2 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs">{job.date_posted}</span>}
+                                </p>
                               </div>
-                              <ChevronRight size={20} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                              <ChevronRight size={20} className="text-zinc-300 group-hover:translate-x-1 transition-transform shrink-0 ml-4" />
                             </div>
-                            <p className="text-sm text-zinc-500 line-clamp-2">{job.snippet}</p>
+                            <p className="text-sm text-zinc-500 mt-3">{job.snippet}</p>
                           </a>
                         ))}
                       </div>

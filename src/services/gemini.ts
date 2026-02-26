@@ -271,14 +271,19 @@ export interface JobOffer {
   location: string;
   link: string;
   snippet: string;
+  date_posted?: string;
 }
 
 export const findJobOffers = async (cvText: string, lang: string = 'pl'): Promise<JobOffer[]> => {
   const ai = getAI();
   const prompt = `
-    Na podstawie poniższego CV, znajdź aktualne oferty pracy w Polsce, które najlepiej pasują do profilu kandydata.
+    Na podstawie poniższego CV, znajdź AKTUALNE (dodane w ciągu ostatnich 30 dni) oferty pracy w Polsce, które najlepiej pasują do profilu kandydata.
     Użyj Google Search, aby znaleźć realne linki do ofert na portalach takich jak Pracuj.pl, LinkedIn, Just Join IT itp.
-    Odpowiedz w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
+    
+    BARDZO WAŻNE:
+    1. Sprawdzaj datę publikacji oferty. Odrzucaj oferty starsze niż 30 dni lub takie, które wygasły.
+    2. Dla każdej oferty podaj przybliżoną datę publikacji (np. "2 dni temu", "15 lutego 2025").
+    3. Odpowiedz w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
     
     CV Kandydata:
     ${cvText}
@@ -288,7 +293,7 @@ export const findJobOffers = async (cvText: string, lang: string = 'pl'): Promis
     model: MODEL_NAME,
     contents: prompt,
     config: {
-      systemInstruction: `Jesteś asystentem kariery. Twoim zadaniem jest znalezienie realnych ofert pracy pasujących do CV użytkownika. Odpowiadaj w języku: ${lang === 'pl' ? 'polskim' : 'angielskim'}.`,
+      systemInstruction: `Jesteś asystentem kariery. Twoim zadaniem jest znalezienie ŚWIEŻYCH i REALNYCH ofert pracy pasujących do CV użytkownika. Odrzucaj wygasłe oferty. Odpowiadaj w języku: ${lang === 'pl' ? 'polskim' : 'angielskim'}.`,
       tools: [{ googleSearch: {} }],
       responseMimeType: "application/json",
       responseSchema: {
@@ -300,9 +305,10 @@ export const findJobOffers = async (cvText: string, lang: string = 'pl'): Promis
             company: { type: Type.STRING },
             location: { type: Type.STRING },
             link: { type: Type.STRING },
-            snippet: { type: Type.STRING }
+            snippet: { type: Type.STRING, description: "Krótki opis stanowiska i wymagań, bez obcinania tekstu." },
+            date_posted: { type: Type.STRING, description: "Kiedy oferta została opublikowana, np. '3 dni temu'" }
           },
-          required: ["title", "company", "location", "link", "snippet"]
+          required: ["title", "company", "location", "link", "snippet", "date_posted"]
         }
       }
     },
