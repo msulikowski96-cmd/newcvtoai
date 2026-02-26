@@ -31,7 +31,8 @@ import {
   Moon,
   Sun,
   Languages,
-  Search
+  Search,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
@@ -674,17 +675,41 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {history.map((h) => (
-                    <div key={h.id} className={`p-4 rounded-2xl border flex items-center justify-between group transition-colors ${theme === 'dark' ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600' : 'bg-zinc-50 border-zinc-100 hover:border-zinc-200'}`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${h.analysis.score >= 80 ? 'bg-emerald-100 text-emerald-700' : h.analysis.score >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                          {h.analysis.score}%
+                    <div key={h.id} className={`p-5 rounded-3xl border flex flex-col gap-4 transition-colors ${theme === 'dark' ? 'bg-zinc-800/30 border-zinc-700 hover:border-zinc-600' : 'bg-white border-zinc-200 hover:border-zinc-300'}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-bold ${h.analysis.score >= 80 ? 'bg-emerald-100 text-emerald-700' : h.analysis.score >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                            <span className="text-xl leading-none">{h.analysis.score}</span>
+                            <span className="text-[9px] uppercase tracking-wider opacity-80 mt-0.5">Score</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-zinc-500 mb-1">
+                              {new Date(h.created_at).toLocaleDateString()} at {new Date(h.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </p>
+                            <p className="font-semibold line-clamp-1 text-base">
+                              {h.job_description ? h.job_description.split('\n')[0].substring(0, 60) : 'No job description provided'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold line-clamp-1">{h.job_description.substring(0, 50)}...</p>
-                          <p className="text-[10px] text-zinc-500 font-medium">{new Date(h.created_at).toLocaleDateString()}</p>
-                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteHistoryItem(h.id);
+                          }}
+                          className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'text-zinc-500 hover:text-red-400 hover:bg-red-900/20' : 'text-zinc-400 hover:text-red-500 hover:bg-red-50'}`}
+                          title="Delete history entry"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      
+                      {h.job_description && (
+                        <div className={`text-sm line-clamp-2 pl-[72px] ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                          {h.job_description}
+                        </div>
+                      )}
+
+                      <div className="pl-[72px] mt-2">
                         <button 
                           onClick={() => {
                             setCvText(h.cv_text);
@@ -693,15 +718,10 @@ export default function App() {
                             setView('app');
                             setActiveTab('analyze');
                           }}
-                          className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-zinc-700 text-zinc-400' : 'hover:bg-white text-zinc-500'}`}
+                          className={`w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${theme === 'dark' ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'}`}
                         >
-                          <ChevronRight size={18} />
-                        </button>
-                        <button 
-                          onClick={() => deleteHistoryItem(h.id)}
-                          className="p-2 hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
+                          <RefreshCw size={16} />
+                          Load Analysis
                         </button>
                       </div>
                     </div>
