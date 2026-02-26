@@ -93,6 +93,10 @@ export default function App() {
   // Profile State
   const [profileName, setProfileName] = useState('');
   const [profileBio, setProfileBio] = useState('');
+  const [profileTargetRole, setProfileTargetRole] = useState('');
+  const [profileExperienceLevel, setProfileExperienceLevel] = useState('');
+  const [profileLinkedinUrl, setProfileLinkedinUrl] = useState('');
+  const [profileGithubUrl, setProfileGithubUrl] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -112,6 +116,10 @@ export default function App() {
           setUser(userData);
           setProfileName(userData.name);
           setProfileBio(userData.bio || '');
+          setProfileTargetRole(userData.target_role || '');
+          setProfileExperienceLevel(userData.experience_level || '');
+          setProfileLinkedinUrl(userData.linkedin_url || '');
+          setProfileGithubUrl(userData.github_url || '');
           setTheme(userData.theme || 'light');
           fetchHistory();
         }
@@ -242,10 +250,25 @@ export default function App() {
       const res = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: profileName, bio: profileBio }),
+        body: JSON.stringify({ 
+          name: profileName, 
+          bio: profileBio,
+          target_role: profileTargetRole,
+          experience_level: profileExperienceLevel,
+          linkedin_url: profileLinkedinUrl,
+          github_url: profileGithubUrl
+        }),
       });
       if (res.ok) {
-        setUser(prev => prev ? { ...prev, name: profileName, bio: profileBio } : null);
+        setUser(prev => prev ? { 
+          ...prev, 
+          name: profileName, 
+          bio: profileBio,
+          target_role: profileTargetRole,
+          experience_level: profileExperienceLevel,
+          linkedin_url: profileLinkedinUrl,
+          github_url: profileGithubUrl
+        } : null);
         alert('Profile updated!');
       }
     } catch (e) {
@@ -693,15 +716,66 @@ export default function App() {
                 Profile Settings
               </h3>
               <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">Display Name</label>
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">Target Role</label>
+                    <input
+                      type="text"
+                      value={profileTargetRole}
+                      onChange={(e) => setProfileTargetRole(e.target.value)}
+                      placeholder="e.g. Frontend Developer"
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">Experience Level</label>
+                    <select
+                      value={profileExperienceLevel}
+                      onChange={(e) => setProfileExperienceLevel(e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all appearance-none ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
+                    >
+                      <option value="">Select Level</option>
+                      <option value="Junior">Junior (0-2 years)</option>
+                      <option value="Mid">Mid-Level (2-5 years)</option>
+                      <option value="Senior">Senior (5+ years)</option>
+                      <option value="Lead">Lead / Manager</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">LinkedIn URL</label>
+                    <input
+                      type="url"
+                      value={profileLinkedinUrl}
+                      onChange={(e) => setProfileLinkedinUrl(e.target.value)}
+                      placeholder="https://linkedin.com/in/..."
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-500 uppercase">Display Name</label>
+                  <label className="text-xs font-bold text-zinc-500 uppercase">GitHub / Portfolio URL</label>
                   <input
-                    type="text"
-                    value={profileName}
-                    onChange={(e) => setProfileName(e.target.value)}
+                    type="url"
+                    value={profileGithubUrl}
+                    onChange={(e) => setProfileGithubUrl(e.target.value)}
+                    placeholder="https://github.com/..."
                     className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
                   />
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-zinc-500 uppercase">Bio</label>
                   <textarea

@@ -85,8 +85,17 @@ async function initDb() {
         avatar TEXT,
         bio TEXT,
         theme TEXT DEFAULT 'light',
+        target_role TEXT,
+        experience_level TEXT,
+        linkedin_url TEXT,
+        github_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS target_role TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS experience_level TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS github_url TEXT;
 
       CREATE TABLE IF NOT EXISTS cv_history (
         id SERIAL PRIMARY KEY,
@@ -126,6 +135,10 @@ async function initDb() {
         avatar TEXT,
         bio TEXT,
         theme TEXT DEFAULT 'light',
+        target_role TEXT,
+        experience_level TEXT,
+        linkedin_url TEXT,
+        github_url TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -139,6 +152,16 @@ async function initDb() {
         FOREIGN KEY(user_id) REFERENCES users(id)
       );
     `);
+    
+    // SQLite doesn't support ADD COLUMN IF NOT EXISTS in all versions, so we try/catch
+    const columns = ['target_role', 'experience_level', 'linkedin_url', 'github_url'];
+    for (const col of columns) {
+      try {
+        await db.exec(`ALTER TABLE users ADD COLUMN ${col} TEXT`);
+      } catch (e) {
+        // Ignore error if column already exists
+      }
+    }
   }
 }
 
@@ -239,8 +262,11 @@ async function startServer() {
     const userId = (req.session as any).userId;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { name, bio, theme } = req.body;
-    await db.run("UPDATE users SET name = ?, bio = ?, theme = ? WHERE id = ?", [name, bio, theme || 'light', userId]);
+    const { name, bio, theme, target_role, experience_level, linkedin_url, github_url } = req.body;
+    await db.run(
+      "UPDATE users SET name = ?, bio = ?, theme = ?, target_role = ?, experience_level = ?, linkedin_url = ?, github_url = ? WHERE id = ?", 
+      [name, bio, theme || 'light', target_role, experience_level, linkedin_url, github_url, userId]
+    );
     res.json({ success: true });
   });
 

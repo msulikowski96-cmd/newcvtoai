@@ -5,6 +5,10 @@ export interface User {
   avatar?: string;
   bio?: string;
   theme?: 'light' | 'dark';
+  target_role?: string;
+  experience_level?: string;
+  linkedin_url?: string;
+  github_url?: string;
 }
 
 export interface CVHistoryItem {
