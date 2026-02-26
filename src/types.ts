@@ -4,6 +4,15 @@ export interface User {
   name: string;
   avatar?: string;
   bio?: string;
+  theme?: 'light' | 'dark';
+}
+
+export interface CVHistoryItem {
+  id: number;
+  cv_text: string;
+  job_description: string;
+  analysis: CVAnalysis;
+  created_at: string;
 }
 
 export interface CVAnalysis {

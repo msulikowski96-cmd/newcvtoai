@@ -26,7 +26,12 @@ import {
   Settings,
   Mail,
   Lock,
-  Camera
+  Camera,
+  History,
+  Moon,
+  Sun,
+  Languages,
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
@@ -37,13 +42,15 @@ import {
   generateInterviewQuestions, 
   analyzeSkillsGap,
   optimizeLinkedIn,
+  findJobOffers,
+  JobOffer
 } from './services/gemini';
-import { User, CVAnalysis, SkillsGap, LinkedInOptimization } from './types';
+import { User, CVAnalysis, SkillsGap, LinkedInOptimization, CVHistoryItem } from './types';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
-type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin';
+type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
 type View = 'app' | 'login' | 'register' | 'profile';
 
 declare global {
@@ -64,6 +71,8 @@ export default function App() {
   const [hasKey, setHasKey] = useState<boolean | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<View>('app');
+  const [history, setHistory] = useState<CVHistoryItem[]>([]);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   
@@ -72,6 +81,8 @@ export default function App() {
   const [interviewQuestions, setInterviewQuestions] = useState<string[] | null>(null);
   const [skillsGap, setSkillsGap] = useState<SkillsGap | null>(null);
   const [linkedIn, setLinkedIn] = useState<LinkedInOptimization | null>(null);
+  const [jobOffers, setJobOffers] = useState<JobOffer[] | null>(null);
+  const [language, setLanguage] = useState<'pl' | 'en'>('pl');
 
   // Auth State
   const [authEmail, setAuthEmail] = useState('');
@@ -101,6 +112,8 @@ export default function App() {
           setUser(userData);
           setProfileName(userData.name);
           setProfileBio(userData.bio || '');
+          setTheme(userData.theme || 'light');
+          fetchHistory();
         }
       } catch (e) {
         console.error("Auth check failed", e);
@@ -108,6 +121,61 @@ export default function App() {
     };
     init();
   }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch('/api/history');
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch history", e);
+    }
+  };
+
+  const saveToHistory = async (currentAnalysis: CVAnalysis) => {
+    if (!user) return;
+    try {
+      const res = await fetch('/api/history/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cvText,
+          jobDescription,
+          analysis: currentAnalysis
+        }),
+      });
+      if (res.ok) {
+        fetchHistory();
+      }
+    } catch (e) {
+      console.error("Failed to save history", e);
+    }
+  };
+
+  const deleteHistoryItem = async (id: number) => {
+    try {
+      const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setHistory(prev => prev.filter(h => h.id !== id));
+      }
+    } catch (e) {
+      console.error("Failed to delete history item", e);
+    }
+  };
+
+  const toggleTheme = async () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    if (user) {
+      await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: profileName, bio: profileBio, theme: newTheme }),
+      });
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,9 +325,10 @@ export default function App() {
     if (!cvText || !jobDescription || !hasKey) return;
     setIsLoading(true);
     try {
-      const result = await analyzeCV(cvText, jobDescription);
+      const result = await analyzeCV(cvText, jobDescription, language);
       setAnalysis(result);
       setActiveTab('analyze');
+      if (user) saveToHistory(result);
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
@@ -274,7 +343,7 @@ export default function App() {
     if (!cvText || !jobDescription || !hasKey) return;
     setIsLoading(true);
     try {
-      const result = await generateCoverLetter(cvText, jobDescription);
+      const result = await generateCoverLetter(cvText, jobDescription, language);
       setCoverLetter(result);
       setActiveTab('cover-letter');
     } catch (error) {
@@ -291,7 +360,7 @@ export default function App() {
     if (!cvText || !jobDescription || !hasKey) return;
     setIsLoading(true);
     try {
-      const result = await generateInterviewQuestions(cvText, jobDescription);
+      const result = await generateInterviewQuestions(cvText, jobDescription, language);
       setInterviewQuestions(result);
       setActiveTab('interview');
     } catch (error) {
@@ -308,7 +377,7 @@ export default function App() {
     if (!cvText || !jobDescription || !hasKey) return;
     setIsLoading(true);
     try {
-      const result = await analyzeSkillsGap(cvText, jobDescription);
+      const result = await analyzeSkillsGap(cvText, jobDescription, language);
       setSkillsGap(result);
       setActiveTab('roadmap');
     } catch (error) {
@@ -325,9 +394,26 @@ export default function App() {
     if (!cvText || !hasKey) return;
     setIsLoading(true);
     try {
-      const result = await optimizeLinkedIn(cvText);
+      const result = await optimizeLinkedIn(cvText, language);
       setLinkedIn(result);
       setActiveTab('linkedin');
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error && error.message.includes("Requested entity was not found")) {
+        setHasKey(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFindJobs = async () => {
+    if (!cvText || !hasKey) return;
+    setIsLoading(true);
+    try {
+      const result = await findJobOffers(cvText, language);
+      setJobOffers(result);
+      setActiveTab('jobs');
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
@@ -498,11 +584,11 @@ export default function App() {
           <div className="w-20" /> {/* Spacer */}
         </header>
 
-        <main className="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-8">
+        <main className="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-8 pb-20">
           <div className="md:col-span-1 space-y-6">
-            <div className="bg-white rounded-3xl shadow-sm border border-zinc-200 p-8 text-center space-y-4">
+            <div className={`rounded-3xl shadow-sm border p-8 text-center space-y-4 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
               <div className="relative inline-block">
-                <div className="w-32 h-32 rounded-full bg-zinc-100 border-4 border-white shadow-md overflow-hidden flex items-center justify-center">
+                <div className={`w-32 h-32 rounded-full border-4 shadow-md overflow-hidden flex items-center justify-center transition-colors ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-white'}`}>
                   {user.avatar ? (
                     <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                   ) : (
@@ -511,7 +597,7 @@ export default function App() {
                 </div>
                 <button 
                   onClick={() => avatarInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-zinc-900 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg hover:scale-110 transition-transform"
+                  className={`absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center border-4 shadow-lg hover:scale-110 transition-all ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900 border-zinc-900' : 'bg-zinc-900 text-white border-white'}`}
                 >
                   <Camera size={16} />
                 </button>
@@ -522,11 +608,77 @@ export default function App() {
                 <p className="text-sm text-zinc-500">{user.email}</p>
               </div>
             </div>
+
+            <div className={`rounded-3xl shadow-sm border p-6 space-y-4 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Statistics</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{history.length}</p>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold">Optimizations</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{history.length > 0 ? Math.round(history.reduce((acc, h) => acc + h.analysis.score, 0) / history.length) : 0}%</p>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold">Avg. Match</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="md:col-span-2 space-y-6">
-            <section className="bg-white rounded-3xl shadow-sm border border-zinc-200 p-8 space-y-6">
-              <h3 className="text-lg font-bold">Profile Settings</h3>
+            <section className={`rounded-3xl shadow-sm border p-8 space-y-6 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <History size={20} />
+                Optimization History
+              </h3>
+              {history.length === 0 ? (
+                <div className="text-center py-10 text-zinc-400">
+                  <History size={40} className="mx-auto mb-2 opacity-20" />
+                  <p>No history yet. Start optimizing!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {history.map((h) => (
+                    <div key={h.id} className={`p-4 rounded-2xl border flex items-center justify-between group transition-colors ${theme === 'dark' ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600' : 'bg-zinc-50 border-zinc-100 hover:border-zinc-200'}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${h.analysis.score >= 80 ? 'bg-emerald-100 text-emerald-700' : h.analysis.score >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                          {h.analysis.score}%
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold line-clamp-1">{h.job_description.substring(0, 50)}...</p>
+                          <p className="text-[10px] text-zinc-500 font-medium">{new Date(h.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => {
+                            setCvText(h.cv_text);
+                            setJobDescription(h.job_description);
+                            setAnalysis(h.analysis);
+                            setView('app');
+                            setActiveTab('analyze');
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-zinc-700 text-zinc-400' : 'hover:bg-white text-zinc-500'}`}
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                        <button 
+                          onClick={() => deleteHistoryItem(h.id)}
+                          className="p-2 hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className={`rounded-3xl shadow-sm border p-8 space-y-6 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Settings size={20} />
+                Profile Settings
+              </h3>
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-zinc-500 uppercase">Display Name</label>
@@ -534,7 +686,7 @@ export default function App() {
                     type="text"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
+                    className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -542,21 +694,21 @@ export default function App() {
                   <textarea
                     value={profileBio}
                     onChange={(e) => setProfileBio(e.target.value)}
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all h-32 resize-none"
+                    className={`w-full px-4 py-3 border rounded-xl outline-none transition-all h-32 resize-none ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
                     placeholder="Tell us about yourself..."
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-8 py-3 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center gap-2"
+                  className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}
                 >
                   {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Save Changes'}
                 </button>
               </form>
             </section>
 
-            <section className="bg-white rounded-3xl shadow-sm border border-zinc-200 p-8 space-y-4">
+            <section className={`rounded-3xl shadow-sm border p-8 space-y-4 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
               <h3 className="text-lg font-bold text-red-600">Danger Zone</h3>
               <p className="text-sm text-zinc-500">Logging out will end your current session.</p>
               <button 
@@ -574,47 +726,69 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-[#f5f5f5] text-zinc-900'}`}>
       {/* Header */}
-      <header className="bg-white border-b border-zinc-200 px-6 py-4 sticky top-0 z-10">
+      <header className={`border-b px-6 py-4 sticky top-0 z-10 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center text-white">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white'}`}>
               <Sparkles size={20} />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">CvToAI</h1>
-              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">AI-Powered Career Assistant</p>
+              <p className={`text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>AI-Powered Career Assistant</p>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
+            <div className={`flex items-center p-1 rounded-xl border transition-colors ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
+              <button 
+                onClick={() => setLanguage('pl')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${language === 'pl' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
+              >
+                PL
+              </button>
+              <button 
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${language === 'en' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
+              >
+                EN
+              </button>
+            </div>
+
+            <button 
+              onClick={toggleTheme}
+              className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'}`}
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+
             {user ? (
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setView('profile')}
-                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-50 rounded-xl transition-colors"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50'}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-zinc-100 overflow-hidden flex items-center justify-center border border-zinc-200">
+                  <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center border ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
                     {user.avatar ? (
                       <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
                       <UserIcon size={16} className="text-zinc-400" />
                     )}
                   </div>
-                  <span className="text-sm font-semibold text-zinc-700 hidden sm:inline">{user.name}</span>
+                  <span className={`text-sm font-semibold hidden sm:inline ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>{user.name}</span>
                 </button>
               </div>
             ) : (
               <button 
                 onClick={() => setView('login')}
-                className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition-all"
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}
               >
                 Sign In
               </button>
             )}
             
-            <div className="w-px h-6 bg-zinc-200 mx-2" />
+            <div className={`w-px h-6 mx-2 ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
 
             <button 
               onClick={() => { setCvText(''); setJobDescription(''); setAnalysis(null); setCoverLetter(null); setInterviewQuestions(null); setSkillsGap(null); setLinkedIn(null); }}
@@ -718,6 +892,14 @@ export default function App() {
                 LinkedIn Optimizer
               </button>
             </div>
+            <button
+              onClick={handleFindJobs}
+              disabled={isLoading || !cvText}
+              className="w-full py-4 bg-zinc-100 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+            >
+              {isLoading && activeTab === 'jobs' ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />}
+              Find Matching Jobs
+            </button>
           </div>
         </div>
 
@@ -726,7 +908,7 @@ export default function App() {
           <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 h-full flex flex-col overflow-hidden">
             {/* Tabs */}
             <div className="flex border-b border-zinc-200 overflow-x-auto no-scrollbar">
-              {(['analyze', 'cover-letter', 'interview', 'roadmap', 'linkedin'] as Tab[]).map((tab) => (
+              {(['analyze', 'cover-letter', 'interview', 'roadmap', 'linkedin', 'jobs'] as Tab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -1072,6 +1254,45 @@ export default function App() {
                           </div>
                         </div>
                       </>
+                    )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'jobs' && (
+                  <motion.div
+                    key="jobs"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                  >
+                    {!jobOffers ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center py-20 text-zinc-400">
+                        <Search size={48} className="mb-4 opacity-20" />
+                        <p className="text-lg font-medium">Find Job Offers</p>
+                        <p className="text-sm">Search for real job offers matching your profile</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {jobOffers.map((job, i) => (
+                          <a 
+                            key={i} 
+                            href={job.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className={`p-6 rounded-2xl border transition-all group ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300'}`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="font-bold text-lg group-hover:text-zinc-500 transition-colors">{job.title}</h4>
+                                <p className="text-sm font-medium text-zinc-500">{job.company} • {job.location}</p>
+                              </div>
+                              <ChevronRight size={20} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <p className="text-sm text-zinc-500 line-clamp-2">{job.snippet}</p>
+                          </a>
+                        ))}
+                      </div>
                     )}
                   </motion.div>
                 )}

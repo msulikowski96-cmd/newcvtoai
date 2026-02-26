@@ -21,8 +21,19 @@ db.exec(`
     name TEXT,
     avatar TEXT,
     bio TEXT,
+    theme TEXT DEFAULT 'light',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
+  );
+
+  CREATE TABLE IF NOT EXISTS cv_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    cv_text TEXT,
+    job_description TEXT,
+    analysis_json TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
 `);
 
 // Configure Multer for avatar uploads
@@ -90,7 +101,7 @@ async function startServer() {
   app.get("/api/auth/me", (req, res) => {
     const userId = (req.session as any).userId;
     if (userId) {
-      const user = db.prepare("SELECT id, email, name, avatar, bio FROM users WHERE id = ?").get(userId);
+      const user = db.prepare("SELECT id, email, name, avatar, bio, theme FROM users WHERE id = ?").get(userId);
       res.json(user);
     } else {
       res.status(401).json({ error: "Not authenticated" });
@@ -108,8 +119,8 @@ async function startServer() {
     const userId = (req.session as any).userId;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { name, bio } = req.body;
-    db.prepare("UPDATE users SET name = ?, bio = ? WHERE id = ?").run(name, bio, userId);
+    const { name, bio, theme } = req.body;
+    db.prepare("UPDATE users SET name = ?, bio = ?, theme = ? WHERE id = ?").run(name, bio, theme || 'light', userId);
     res.json({ success: true });
   });
 
@@ -120,6 +131,33 @@ async function startServer() {
     const avatarPath = `/uploads/avatars/${req.file?.filename}`;
     db.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(avatarPath, userId);
     res.json({ avatar: avatarPath });
+  });
+
+  // CV History Routes
+  app.post("/api/history/save", (req, res) => {
+    const userId = (req.session as any).userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { cvText, jobDescription, analysis } = req.body;
+    db.prepare("INSERT INTO cv_history (user_id, cv_text, job_description, analysis_json) VALUES (?, ?, ?, ?)")
+      .run(userId, cvText, jobDescription, JSON.stringify(analysis));
+    res.json({ success: true });
+  });
+
+  app.get("/api/history", (req, res) => {
+    const userId = (req.session as any).userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const history = db.prepare("SELECT * FROM cv_history WHERE user_id = ? ORDER BY created_at DESC").all(userId);
+    res.json(history.map((h: any) => ({ ...h, analysis: JSON.parse(h.analysis_json) })));
+  });
+
+  app.delete("/api/history/:id", (req, res) => {
+    const userId = (req.session as any).userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    db.prepare("DELETE FROM cv_history WHERE id = ? AND user_id = ?").run(req.params.id, userId);
+    res.json({ success: true });
   });
 
   if (process.env.NODE_ENV !== "production") {

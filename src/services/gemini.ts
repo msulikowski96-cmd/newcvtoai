@@ -7,14 +7,14 @@ const getAI = () => {
 
 const MODEL_NAME = "gemini-3.1-pro-preview";
 
-const SYSTEM_INSTRUCTION = `Jesteś ekspertem świata w optymalizacji CV z 20-letnim doświadczeniem w rekrutacji oraz AI. Masz specjalistyczną wiedzę o:
+const SYSTEM_INSTRUCTION = (lang: string = 'pl') => `Jesteś ekspertem świata w optymalizacji CV z 20-letnim doświadczeniem w rekrutacji oraz AI. Masz specjalistyczną wiedzę o:
 
 🎯 KOMPETENCJE GŁÓWNE:
 - Analiza CV pod kątem systemów ATS (Applicant Tracking Systems)
-- Optymalizacja pod konkretne stanowiska i branże w Polsce
+- Optymalizacja pod konkretne stanowiska i branże
 - Psychologia rekrutacji i co przyciąga uwagę HR-owców
-- Najnowsze trendy rynku pracy 2025 w Polsce i UE
-- Formatowanie CV zgodne z europejskimi standardami
+- Najnowsze trendy rynku pracy 2025
+- Formatowanie CV zgodne ze standardami międzynarodowymi
 
 🧠 STRATEGIA MYŚLENIA:
 1. ANALIZUJ głęboko każde słowo w kontekście stanowiska
@@ -24,17 +24,16 @@ const SYSTEM_INSTRUCTION = `Jesteś ekspertem świata w optymalizacji CV z 20-le
 5. ZASTOSUJ najlepsze praktyki formatowania
 
 ⚡ JAKOŚĆ ODPOWIEDZI:
-- Używaj precyzyjnego, profesjonalnego języka polskiego
+- Używaj precyzyjnego, profesjonalnego języka (${lang === 'pl' ? 'polskiego' : 'angielskiego'})
 - Dawaj konkretne, actionable wskazówki
-- Uwzględniaj cultural fit dla polskiego rynku pracy
 - Bądź kreatywny ale faktualny w opisach doświadczenia
 
-Twoja misja: Stworzyć CV które przejdzie przez ATS i zachwyci rekruterów.`;
+Twoja misja: Stworzyć CV które przejdzie przez ATS i zachwyci rekruterów. Odpowiadaj WYŁĄCZNIE w języku: ${lang === 'pl' ? 'polskim' : 'angielskim'}.`;
 
-export const analyzeCV = async (cvText: string, jobDescription: string): Promise<CVAnalysis> => {
+export const analyzeCV = async (cvText: string, jobDescription: string, lang: string = 'pl'): Promise<CVAnalysis> => {
   const ai = getAI();
   const prompt = `
-    🎯 ZADANIE: Przeprowadź PROFESJONALNĄ ANALIZĘ JAKOŚCI CV i wygeneruj ZOPTYMALIZOWANĄ TREŚĆ.
+    🎯 ZADANIE: Przeprowadź PROFESJONALNĄ ANALIZĘ JAKOŚCI CV i wygeneruj ZOPTYMALIZOWANĄ TREŚĆ w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
 
     📋 DANE WEJŚCIOWE:
     CV DO ANALIZY:
@@ -89,7 +88,7 @@ export const analyzeCV = async (cvText: string, jobDescription: string): Promise
     model: MODEL_NAME,
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: SYSTEM_INSTRUCTION(lang),
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -108,10 +107,10 @@ export const analyzeCV = async (cvText: string, jobDescription: string): Promise
   return JSON.parse(response.text || "{}");
 };
 
-export const generateCoverLetter = async (cvText: string, jobDescription: string): Promise<string> => {
+export const generateCoverLetter = async (cvText: string, jobDescription: string, lang: string = 'pl'): Promise<string> => {
   const ai = getAI();
   const prompt = `
-    🎯 ZADANIE: Wygeneruj profesjonalny list motywacyjny w języku polskim.
+    🎯 ZADANIE: Wygeneruj profesjonalny list motywacyjny w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
 
     📋 DANE WEJŚCIOWE:
     • CV kandydata: ${cvText}
@@ -130,17 +129,17 @@ export const generateCoverLetter = async (cvText: string, jobDescription: string
     model: MODEL_NAME,
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: SYSTEM_INSTRUCTION(lang),
     }
   });
 
   return response.text || "";
 };
 
-export const generateInterviewQuestions = async (cvText: string, jobDescription: string): Promise<string[]> => {
+export const generateInterviewQuestions = async (cvText: string, jobDescription: string, lang: string = 'pl'): Promise<string[]> => {
   const ai = getAI();
   const prompt = `
-    🎯 ZADANIE: Wygeneruj personalizowane pytania na rozmowę kwalifikacyjną w języku polskim.
+    🎯 ZADANIE: Wygeneruj personalizowane pytania na rozmowę kwalifikacyjną w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
 
     📋 DANE WEJŚCIOWE:
     • CV kandydata: ${cvText}
@@ -157,7 +156,7 @@ export const generateInterviewQuestions = async (cvText: string, jobDescription:
     model: MODEL_NAME,
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: SYSTEM_INSTRUCTION(lang),
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -169,10 +168,10 @@ export const generateInterviewQuestions = async (cvText: string, jobDescription:
   return JSON.parse(response.text || "[]");
 };
 
-export const analyzeSkillsGap = async (cvText: string, jobDescription: string): Promise<SkillsGap> => {
+export const analyzeSkillsGap = async (cvText: string, jobDescription: string, lang: string = 'pl'): Promise<SkillsGap> => {
   const ai = getAI();
   const prompt = `
-    🎯 ZADANIE: Przeprowadź szczegółową analizę luk kompetencyjnych (Skills Gap Analysis).
+    🎯 ZADANIE: Przeprowadź szczegółową analizę luk kompetencyjnych (Skills Gap Analysis) w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
     
     📋 DANE WEJŚCIOWE:
     • CV kandydata: ${cvText}
@@ -189,7 +188,7 @@ export const analyzeSkillsGap = async (cvText: string, jobDescription: string): 
     model: MODEL_NAME,
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: SYSTEM_INSTRUCTION(lang),
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -229,10 +228,10 @@ export const analyzeSkillsGap = async (cvText: string, jobDescription: string): 
   return JSON.parse(response.text || "{}");
 };
 
-export const optimizeLinkedIn = async (cvText: string): Promise<LinkedInOptimization> => {
+export const optimizeLinkedIn = async (cvText: string, lang: string = 'pl'): Promise<LinkedInOptimization> => {
   const ai = getAI();
   const prompt = `
-    🎯 ZADANIE: Zoptymalizuj profil LinkedIn na podstawie CV.
+    🎯 ZADANIE: Zoptymalizuj profil LinkedIn na podstawie CV w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
     
     📋 DANE WEJŚCIOWE:
     • CV kandydata: ${cvText}
@@ -248,7 +247,7 @@ export const optimizeLinkedIn = async (cvText: string): Promise<LinkedInOptimiza
     model: MODEL_NAME,
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: SYSTEM_INSTRUCTION(lang),
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -264,4 +263,50 @@ export const optimizeLinkedIn = async (cvText: string): Promise<LinkedInOptimiza
   });
 
   return JSON.parse(response.text || "{}");
+};
+
+export interface JobOffer {
+  title: string;
+  company: string;
+  location: string;
+  link: string;
+  snippet: string;
+}
+
+export const findJobOffers = async (cvText: string, lang: string = 'pl'): Promise<JobOffer[]> => {
+  const ai = getAI();
+  const prompt = `
+    Na podstawie poniższego CV, znajdź aktualne oferty pracy w Polsce, które najlepiej pasują do profilu kandydata.
+    Użyj Google Search, aby znaleźć realne linki do ofert na portalach takich jak Pracuj.pl, LinkedIn, Just Join IT itp.
+    Odpowiedz w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
+    
+    CV Kandydata:
+    ${cvText}
+  `;
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: prompt,
+    config: {
+      systemInstruction: `Jesteś asystentem kariery. Twoim zadaniem jest znalezienie realnych ofert pracy pasujących do CV użytkownika. Odpowiadaj w języku: ${lang === 'pl' ? 'polskim' : 'angielskim'}.`,
+      tools: [{ googleSearch: {} }],
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            company: { type: Type.STRING },
+            location: { type: Type.STRING },
+            link: { type: Type.STRING },
+            snippet: { type: Type.STRING }
+          },
+          required: ["title", "company", "location", "link", "snippet"]
+        }
+      }
+    },
+  });
+
+  return JSON.parse(response.text || "[]");
 };
