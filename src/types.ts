@@ -9,6 +9,12 @@ export interface User {
   experience_level?: string;
   linkedin_url?: string;
   github_url?: string;
+  preferences?: {
+    include_projects?: boolean;
+    emphasized_keywords?: string[];
+    summary_tone?: 'professional' | 'creative' | 'minimalist' | 'bold';
+    preferred_sections?: string[];
+  };
 }
 
 export interface CVHistoryItem {
@@ -26,11 +32,11 @@ export interface CVAnalysis {
   suggestions: string[];
   optimizedContent: string;
   atsBreakdown: {
-    formatting: number;
-    keywords: number;
-    structure: number;
-    relevance: number;
-    impact: number;
+    formatting: { score: number; feedback: string };
+    keywords: { score: number; feedback: string };
+    structure: { score: number; feedback: string };
+    relevance: { score: number; feedback: string };
+    impact: { score: number; feedback: string };
   };
 }
 

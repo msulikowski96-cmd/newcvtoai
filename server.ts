@@ -96,6 +96,7 @@ async function initDb() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS experience_level TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS github_url TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences TEXT;
 
       CREATE TABLE IF NOT EXISTS cv_history (
         id SERIAL PRIMARY KEY,
@@ -154,7 +155,7 @@ async function initDb() {
     `);
     
     // SQLite doesn't support ADD COLUMN IF NOT EXISTS in all versions, so we try/catch
-    const columns = ['target_role', 'experience_level', 'linkedin_url', 'github_url'];
+    const columns = ['target_role', 'experience_level', 'linkedin_url', 'github_url', 'preferences'];
     for (const col of columns) {
       try {
         await db.exec(`ALTER TABLE users ADD COLUMN ${col} TEXT`);
@@ -244,7 +245,10 @@ async function startServer() {
   app.get("/api/auth/me", async (req, res) => {
     const userId = (req.session as any).userId;
     if (userId) {
-      const user = await db.get("SELECT id, email, name, avatar, bio, theme FROM users WHERE id = ?", [userId]);
+      const user = await db.get("SELECT id, email, name, avatar, bio, theme, target_role, experience_level, linkedin_url, github_url, preferences FROM users WHERE id = ?", [userId]);
+      if (user && user.preferences) {
+        user.preferences = JSON.parse(user.preferences);
+      }
       res.json(user);
     } else {
       res.status(401).json({ error: "Not authenticated" });
@@ -262,10 +266,10 @@ async function startServer() {
     const userId = (req.session as any).userId;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { name, bio, theme, target_role, experience_level, linkedin_url, github_url } = req.body;
+    const { name, bio, theme, target_role, experience_level, linkedin_url, github_url, preferences } = req.body;
     await db.run(
-      "UPDATE users SET name = ?, bio = ?, theme = ?, target_role = ?, experience_level = ?, linkedin_url = ?, github_url = ? WHERE id = ?", 
-      [name, bio, theme || 'light', target_role, experience_level, linkedin_url, github_url, userId]
+      "UPDATE users SET name = ?, bio = ?, theme = ?, target_role = ?, experience_level = ?, linkedin_url = ?, github_url = ?, preferences = ? WHERE id = ?", 
+      [name, bio, theme || 'light', target_role, experience_level, linkedin_url, github_url, JSON.stringify(preferences), userId]
     );
     res.json({ success: true });
   });

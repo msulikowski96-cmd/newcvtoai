@@ -98,6 +98,10 @@ export default function App() {
   const [profileExperienceLevel, setProfileExperienceLevel] = useState('');
   const [profileLinkedinUrl, setProfileLinkedinUrl] = useState('');
   const [profileGithubUrl, setProfileGithubUrl] = useState('');
+  const [profileIncludeProjects, setProfileIncludeProjects] = useState(false);
+  const [profileEmphasizedKeywords, setProfileEmphasizedKeywords] = useState('');
+  const [profileSummaryTone, setProfileSummaryTone] = useState<'professional' | 'creative' | 'minimalist' | 'bold'>('professional');
+  const [customCoverLetterDetails, setCustomCoverLetterDetails] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -121,6 +125,9 @@ export default function App() {
           setProfileExperienceLevel(userData.experience_level || '');
           setProfileLinkedinUrl(userData.linkedin_url || '');
           setProfileGithubUrl(userData.github_url || '');
+          setProfileIncludeProjects(userData.preferences?.include_projects || false);
+          setProfileEmphasizedKeywords(userData.preferences?.emphasized_keywords?.join(', ') || '');
+          setProfileSummaryTone(userData.preferences?.summary_tone || 'professional');
           setTheme(userData.theme || 'light');
           fetchHistory();
         }
@@ -257,7 +264,12 @@ export default function App() {
           target_role: profileTargetRole,
           experience_level: profileExperienceLevel,
           linkedin_url: profileLinkedinUrl,
-          github_url: profileGithubUrl
+          github_url: profileGithubUrl,
+          preferences: {
+            include_projects: profileIncludeProjects,
+            emphasized_keywords: profileEmphasizedKeywords.split(',').map(k => k.trim()).filter(k => k),
+            summary_tone: profileSummaryTone
+          }
         }),
       });
       if (res.ok) {
@@ -268,7 +280,12 @@ export default function App() {
           target_role: profileTargetRole,
           experience_level: profileExperienceLevel,
           linkedin_url: profileLinkedinUrl,
-          github_url: profileGithubUrl
+          github_url: profileGithubUrl,
+          preferences: {
+            include_projects: profileIncludeProjects,
+            emphasized_keywords: profileEmphasizedKeywords.split(',').map(k => k.trim()).filter(k => k),
+            summary_tone: profileSummaryTone
+          }
         } : null);
         alert('Profile updated!');
       }
@@ -361,7 +378,7 @@ export default function App() {
 
     setIsLoading(true);
     try {
-      const result = await analyzeCV(cvText, jobDescription, language);
+      const result = await analyzeCV(cvText, jobDescription, language, user?.preferences);
       setAnalysis(result);
       setActiveTab('analyze');
       if (user) saveToHistory(result);
@@ -380,7 +397,7 @@ export default function App() {
     if (!cvText || !jobDescription || !hasKey) return;
     setIsLoading(true);
     try {
-      const result = await generateCoverLetter(cvText, jobDescription, language);
+      const result = await generateCoverLetter(cvText, jobDescription, language, customCoverLetterDetails);
       setCoverLetter(result);
       setActiveTab('cover-letter');
     } catch (error) {
@@ -805,6 +822,53 @@ export default function App() {
                     placeholder="Tell us about yourself..."
                   />
                 </div>
+
+                <div className="pt-4 border-t border-zinc-100 space-y-4">
+                  <h4 className="text-sm font-bold text-zinc-900 uppercase tracking-wider">CV Generation Preferences</h4>
+                  
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="includeProjects"
+                      checked={profileIncludeProjects}
+                      onChange={(e) => setProfileIncludeProjects(e.target.checked)}
+                      className="w-5 h-5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                    />
+                    <label htmlFor="includeProjects" className="text-sm font-medium text-zinc-700">Include 'Projects' section in CV</label>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">Keywords to Emphasize</label>
+                    <input
+                      type="text"
+                      value={profileEmphasizedKeywords}
+                      onChange={(e) => setProfileEmphasizedKeywords(e.target.value)}
+                      placeholder="e.g. React, Node.js, AWS (comma separated)"
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">Summary Tone</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(['professional', 'creative', 'minimalist', 'bold'] as const).map((tone) => (
+                        <button
+                          key={tone}
+                          type="button"
+                          onClick={() => setProfileSummaryTone(tone)}
+                          className={`px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${
+                            profileSummaryTone === tone 
+                              ? 'bg-zinc-900 text-white border-zinc-900' 
+                              : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                          }`}
+                        >
+                          {tone}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -1068,29 +1132,39 @@ export default function App() {
                           {/* ATS Breakdown */}
                           <div className="bg-white p-6 rounded-2xl border border-zinc-200 lg:col-span-2">
                             <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">ATS Detailed Breakdown</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                            <div className="grid grid-cols-1 gap-4">
                               {[
-                                { label: 'Formatting', value: analysis.atsBreakdown?.formatting || 0 },
-                                { label: 'Keywords', value: analysis.atsBreakdown?.keywords || 0 },
-                                { label: 'Structure', value: analysis.atsBreakdown?.structure || 0 },
-                                { label: 'Relevance', value: analysis.atsBreakdown?.relevance || 0 },
-                                { label: 'Impact', value: analysis.atsBreakdown?.impact || 0 },
+                                { label: 'Formatting', data: analysis.atsBreakdown?.formatting },
+                                { label: 'Keywords', data: analysis.atsBreakdown?.keywords },
+                                { label: 'Structure', data: analysis.atsBreakdown?.structure },
+                                { label: 'Relevance', data: analysis.atsBreakdown?.relevance },
+                                { label: 'Impact', data: analysis.atsBreakdown?.impact },
                               ].map((item) => (
-                                <div key={item.label} className="space-y-1">
-                                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
-                                    <span>{item.label}</span>
-                                    <span>{item.value}/20</span>
+                                <div key={item.label} className="space-y-2 p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold uppercase tracking-tighter">{item.label}</span>
+                                    <span className={`text-xs font-bold ${
+                                      (item.data?.score || 0) > 15 ? 'text-emerald-600' : 
+                                      (item.data?.score || 0) > 10 ? 'text-amber-600' : 'text-rose-600'
+                                    }`}>
+                                      {item.data?.score || 0}/20
+                                    </span>
                                   </div>
-                                  <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                                  <div className="h-1.5 bg-zinc-200 rounded-full overflow-hidden">
                                     <motion.div 
                                       initial={{ width: 0 }}
-                                      animate={{ width: `${(item.value / 20) * 100}%` }}
+                                      animate={{ width: `${((item.data?.score || 0) / 20) * 100}%` }}
                                       className={`h-full rounded-full ${
-                                        item.value > 15 ? 'bg-emerald-500' : 
-                                        item.value > 10 ? 'bg-amber-500' : 'bg-rose-500'
+                                        (item.data?.score || 0) > 15 ? 'bg-emerald-500' : 
+                                        (item.data?.score || 0) > 10 ? 'bg-amber-500' : 'bg-rose-500'
                                       }`}
                                     />
                                   </div>
+                                  {item.data?.feedback && (
+                                    <p className="text-[11px] text-zinc-500 leading-tight italic">
+                                      {item.data.feedback}
+                                    </p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1185,13 +1259,40 @@ export default function App() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="h-full"
+                    className="space-y-6"
                   >
+                    <div className="bg-zinc-900 text-white p-6 rounded-3xl border border-zinc-800 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <FileEdit size={20} className="text-emerald-400" />
+                        <h3 className="font-bold uppercase tracking-widest text-xs">Tailor Your Cover Letter</h3>
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        Add specific details about the company culture, a recent project they completed, or why you're a perfect fit for this specific team.
+                      </p>
+                      <textarea
+                        value={customCoverLetterDetails}
+                        onChange={(e) => setCustomCoverLetterDetails(e.target.value)}
+                        placeholder="e.g. I know the company is focusing on expanding their cloud infrastructure and I have 3 years of experience with AWS migrations..."
+                        className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl outline-none transition-all h-24 resize-none text-sm focus:ring-1 focus:ring-emerald-500"
+                      />
+                      <button
+                        onClick={handleGenerateCoverLetter}
+                        disabled={isLoading || !cvText || !jobDescription}
+                        className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
+                          <>
+                            <Sparkles size={18} />
+                            {coverLetter ? 'Regenerate Cover Letter' : 'Generate Cover Letter'}
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     {!coverLetter ? (
-                      <div className="h-full flex flex-col items-center justify-center text-center py-20 text-zinc-400">
+                      <div className="h-full flex flex-col items-center justify-center text-center py-10 text-zinc-400">
                         <FileEdit size={48} className="mb-4 opacity-20" />
-                        <p className="text-lg font-medium">No cover letter generated</p>
-                        <p className="text-sm">Click "Cover Letter" to generate one based on your CV</p>
+                        <p className="text-lg font-medium">No cover letter generated yet</p>
                       </div>
                     ) : (
                       <div className="space-y-4">

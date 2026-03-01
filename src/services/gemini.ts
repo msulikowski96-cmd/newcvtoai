@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { CVAnalysis, SkillsGap, LinkedInOptimization } from "../types";
+import { CVAnalysis, SkillsGap, LinkedInOptimization, User } from "../types";
 
 const getAI = () => {
   return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
@@ -30,17 +30,18 @@ const SYSTEM_INSTRUCTION = (lang: string = 'pl') => `Jesteś ekspertem świata w
 
 Twoja misja: Stworzyć CV które przejdzie przez ATS i zachwyci rekruterów. Odpowiadaj WYŁĄCZNIE w języku: ${lang === 'pl' ? 'polskim' : 'angielskim'}.`;
 
-export const analyzeCV = async (cvText: string, jobDescription: string, lang: string = 'pl'): Promise<CVAnalysis> => {
+export const analyzeCV = async (cvText: string, jobDescription: string, lang: string = 'pl', userPreferences?: User['preferences']): Promise<CVAnalysis> => {
   const ai = getAI();
   const prompt = `
     🎯 ZADANIE: Przeprowadź PROFESJONALNĄ ANALIZĘ JAKOŚCI CV i wygeneruj ZOPTYMALIZOWANĄ TREŚĆ w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
-
-    📋 DANE WEJŚCIOWE:
-    CV DO ANALIZY:
-    ${cvText}
-
-    OPIS STANOWISKA:
-    ${jobDescription}
+    
+    ${userPreferences ? `
+    PREFERENCJE UŻYTKOWNIKA:
+    - Uwzględnij sekcję Projekty: ${userPreferences.include_projects ? 'TAK' : 'NIE'}
+    - Słowa kluczowe do podkreślenia: ${userPreferences.emphasized_keywords?.join(', ') || 'Brak'}
+    - Ton podsumowania: ${userPreferences.summary_tone || 'profesjonalny'}
+    - Preferowane sekcje: ${userPreferences.preferred_sections?.join(', ') || 'Brak'}
+    ` : ''}
 
     🔍 KRYTERIA OCENY (każde 0-20 punktów):
     1. FORMATOWANIE (0-20p): Czy CV jest czytelne dla systemów ATS (brak tabel, grafik, kolumn)?
@@ -51,38 +52,18 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
 
     ZASADY OPTYMALIZACJI TREŚCI:
     1. NIE DODAWAJ żadnych fałszywych informacji.
-    2. NIE WYMIŚLAJ stanowisk, firm, dat ani umiejętności.
-    3. PRZEPISZ tylko to co jest w oryginalnym CV, ulepszając sformułowania.
-    4. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska (ATS optimization).
-    5. ZACHOWAJ wszystkie prawdziwe fakty z oryginalnego CV.
-    6. ZASTOSUJ formatowanie przyjazne dla ATS: proste nagłówki, standardowe czcionki (w tekście), brak kolumn.
+    2. PRZEPISZ tylko to co jest w oryginalnym CV, ulepszając sformułowania.
+    3. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska (ATS optimization).
+    4. ZASTOSUJ formatowanie przyjazne dla ATS: proste nagłówki, standardowe czcionki (w tekście), brak kolumn.
+    5. DOPASUJ ton podsumowania do preferencji użytkownika (${userPreferences?.summary_tone || 'profesjonalny'}).
 
-    STRUKTURA ZOPTYMALIZOWANEGO CV (Używaj Markdown i Emoji dla czytelności):
+    STRUKTURA ZOPTYMALIZOWANEGO CV:
     # 📄 CV: [Imię i Nazwisko]
-
     ## 👤 PODSUMOWANIE ZAWODOWE
-    - Stwórz zwięzłe podsumowanie (2-3 zdania) o kluczowych umiejętnościach i doświadczeniu.
-    - Użyj tylko faktów z oryginalnego CV.
-
     ## 💼 DOŚWIADCZENIE ZAWODOWE
-    - KRYTYCZNY FORMAT: Każde stanowisko musi zaczynać się od nagłówka poziomu 3 z emoji: ### 🏢 [Nazwa Firmy]
-    - Struktura każdego stanowiska:
-      ### 🏢 **Nazwa firmy**
-      **Nazwa stanowiska** | *Okres pracy (rok-rok)*
-      
-      **Kluczowe obowiązki:**
-      - Obowiązki (3-4 punkty z konkretnymi czasownikami akcji).
-      - Używaj emoji 🔹 dla punktów.
-    - Zachowaj wszystkie firmy, stanowiska i daty z oryginału.
-
+    ${userPreferences?.include_projects ? '## 🚀 PROJEKTY' : ''}
     ## 🎓 WYKSZTAŁCENIE
-    - Przepisz dokładnie informacje z oryginalnego CV.
-    - Użyj emoji 🏛️ dla uczelni.
-
     ## 🛠️ UMIEJĘTNOŚCI
-    - Użyj tylko umiejętności wymienionych w oryginalnym CV.
-    - Pogrupuj je logicznie (Techniczne, Komunikacyjne, itp.).
-    - Używaj emoji ✅ dla każdej umiejętności.
   `;
 
   const response = await ai.models.generateContent({
@@ -94,19 +75,39 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          score: { type: Type.NUMBER, description: "Całkowita ocena 0-100 na podstawie 5 kryteriów." },
-          strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Minimum 3 konkretne mocne strony." },
-          weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Minimum 3 konkretne obszary do poprawy." },
-          suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3-5 najważniejszych rekomendacji zmian." },
-          optimizedContent: { type: Type.STRING, description: "Kompletny tekst zoptymalizowanego CV." },
+          score: { type: Type.NUMBER },
+          strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+          weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+          suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+          optimizedContent: { type: Type.STRING },
           atsBreakdown: {
             type: Type.OBJECT,
             properties: {
-              formatting: { type: Type.NUMBER, description: "Ocena formatowania 0-20." },
-              keywords: { type: Type.NUMBER, description: "Ocena słów kluczowych 0-20." },
-              structure: { type: Type.NUMBER, description: "Ocena struktury 0-20." },
-              relevance: { type: Type.NUMBER, description: "Ocena dopasowania 0-20." },
-              impact: { type: Type.NUMBER, description: "Ocena wpływu 0-20." },
+              formatting: { 
+                type: Type.OBJECT, 
+                properties: { score: { type: Type.NUMBER }, feedback: { type: Type.STRING } },
+                required: ["score", "feedback"]
+              },
+              keywords: { 
+                type: Type.OBJECT, 
+                properties: { score: { type: Type.NUMBER }, feedback: { type: Type.STRING } },
+                required: ["score", "feedback"]
+              },
+              structure: { 
+                type: Type.OBJECT, 
+                properties: { score: { type: Type.NUMBER }, feedback: { type: Type.STRING } },
+                required: ["score", "feedback"]
+              },
+              relevance: { 
+                type: Type.OBJECT, 
+                properties: { score: { type: Type.NUMBER }, feedback: { type: Type.STRING } },
+                required: ["score", "feedback"]
+              },
+              impact: { 
+                type: Type.OBJECT, 
+                properties: { score: { type: Type.NUMBER }, feedback: { type: Type.STRING } },
+                required: ["score", "feedback"]
+              },
             },
             required: ["formatting", "keywords", "structure", "relevance", "impact"],
           },
@@ -119,22 +120,20 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
   return JSON.parse(response.text || "{}");
 };
 
-export const generateCoverLetter = async (cvText: string, jobDescription: string, lang: string = 'pl'): Promise<string> => {
+export const generateCoverLetter = async (cvText: string, jobDescription: string, lang: string = 'pl', customDetails?: string): Promise<string> => {
   const ai = getAI();
   const prompt = `
     🎯 ZADANIE: Wygeneruj profesjonalny list motywacyjny w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
-
+    
     📋 DANE WEJŚCIOWE:
     • CV kandydata: ${cvText}
     • Opis stanowiska: ${jobDescription}
+    ${customDetails ? `• DODATKOWE SZCZEGÓŁY O FIRMIE/ROLI: ${customDetails}` : ''}
 
-    ✅ WYMAGANIA LISTU MOTYWACYJNEGO:
-    1. Format profesjonalny (nagłówek, zwroty grzecznościowe, podpis).
-    2. Długość: 3-4 akapity (około 250-350 słów).
-    3. Personalizacja pod konkretne stanowisko.
-    4. Podkreślenie najważniejszych kwalifikacji z CV.
-    5. Wykazanie motywacji i zaangażowania.
-    6. Profesjonalny, ale ciepły ton komunikacji.
+    ✅ WYMAGANIA:
+    1. Wykorzystaj podane dodatkowe szczegóły, aby spersonalizować list.
+    2. Pokaż, że kandydat rozumie specyfikę firmy i roli.
+    3. Zachowaj profesjonalny ton.
   `;
 
   const response = await ai.models.generateContent({
