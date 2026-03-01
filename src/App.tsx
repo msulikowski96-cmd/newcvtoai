@@ -1124,10 +1124,21 @@ export default function App() {
                               <Copy size={16} />
                             </button>
                           </div>
-                          <div className="p-8 bg-white border border-zinc-200 rounded-2xl shadow-inner min-h-[400px]">
-                            <div className="markdown-body">
-                              <Markdown>{analysis.optimizedContent}</Markdown>
-                            </div>
+                          <div className="p-8 sm:p-16 bg-white border border-zinc-200 rounded-sm shadow-2xl min-h-[1056px] max-w-[816px] mx-auto font-sans">
+                            <Markdown
+                              components={{
+                                h1: ({node, ...props}) => <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 border-b-4 border-zinc-900 pb-6 mb-8 uppercase tracking-widest text-center" {...props} />,
+                                h2: ({node, ...props}) => <h2 className="text-xl font-bold text-zinc-900 mt-12 mb-6 uppercase tracking-widest border-b-2 border-zinc-200 pb-2" {...props} />,
+                                h3: ({node, ...props}) => <h3 className="text-lg font-bold text-zinc-900 mt-8 mb-2 flex items-center gap-2" {...props} />,
+                                p: ({node, ...props}) => <p className="text-zinc-700 leading-relaxed mb-4" {...props} />,
+                                ul: ({node, ...props}) => <ul className="space-y-3 mb-8" {...props} />,
+                                li: ({node, ...props}) => <li className="text-zinc-700 leading-relaxed pl-2" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-bold text-zinc-900" {...props} />,
+                                em: ({node, ...props}) => <em className="text-zinc-500 not-italic text-sm font-medium ml-2" {...props} />,
+                              }}
+                            >
+                              {analysis.optimizedContent}
+                            </Markdown>
                           </div>
                         </div>
                       </>
@@ -1162,10 +1173,21 @@ export default function App() {
                             </button>
                           </div>
                         </div>
-                        <div className="p-8 bg-white border border-zinc-200 rounded-2xl shadow-inner min-h-[500px]">
-                          <div className="markdown-body">
-                            <Markdown>{coverLetter}</Markdown>
-                          </div>
+                        <div className="p-8 sm:p-16 bg-white border border-zinc-200 rounded-sm shadow-2xl min-h-[1056px] max-w-[816px] mx-auto font-serif">
+                          <Markdown
+                            components={{
+                              h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-zinc-900 mb-6" {...props} />,
+                              h2: ({node, ...props}) => <h2 className="text-xl font-bold text-zinc-800 mt-8 mb-4" {...props} />,
+                              h3: ({node, ...props}) => <h3 className="text-lg font-bold text-zinc-900 mt-6 mb-2" {...props} />,
+                              p: ({node, ...props}) => <p className="text-zinc-800 leading-relaxed mb-6 text-justify" {...props} />,
+                              ul: ({node, ...props}) => <ul className="space-y-2 mb-6 ml-4" {...props} />,
+                              li: ({node, ...props}) => <li className="text-zinc-800 leading-relaxed list-disc" {...props} />,
+                              strong: ({node, ...props}) => <strong className="font-semibold text-zinc-900" {...props} />,
+                              em: ({node, ...props}) => <em className="text-zinc-600 italic" {...props} />,
+                            }}
+                          >
+                            {coverLetter}
+                          </Markdown>
                         </div>
                       </div>
                     )}
