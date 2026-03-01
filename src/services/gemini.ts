@@ -7,6 +7,28 @@ const getAI = () => {
 
 const MODEL_NAME = "gemini-3.1-pro-preview";
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const callGeminiWithRetry = async (fn: () => Promise<any>, maxRetries = 3): Promise<any> => {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isRateLimit = error?.message?.includes("429") || error?.status === 429 || error?.message?.includes("RESOURCE_EXHAUSTED");
+      if (isRateLimit && i < maxRetries - 1) {
+        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+        console.warn(`Rate limit hit. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await sleep(delay);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+};
+
 const SYSTEM_INSTRUCTION = (lang: string = 'pl') => `Jesteś ekspertem świata w optymalizacji CV z 20-letnim doświadczeniem w rekrutacji oraz AI. Masz specjalistyczną wiedzę o:
 
 🎯 KOMPETENCJE GŁÓWNE:
@@ -66,7 +88,7 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     ## 🛠️ UMIEJĘTNOŚCI
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model: MODEL_NAME,
     contents: prompt,
     config: {
@@ -115,7 +137,7 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
         required: ["score", "strengths", "weaknesses", "suggestions", "optimizedContent", "atsBreakdown"],
       },
     },
-  });
+  }));
 
   return JSON.parse(response.text || "{}");
 };
@@ -136,13 +158,13 @@ export const generateCoverLetter = async (cvText: string, jobDescription: string
     3. Zachowaj profesjonalny ton.
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model: MODEL_NAME,
     contents: prompt,
     config: {
       systemInstruction: SYSTEM_INSTRUCTION(lang),
     }
-  });
+  }));
 
   return response.text || "";
 };
@@ -163,7 +185,7 @@ export const generateInterviewQuestions = async (cvText: string, jobDescription:
     4. Dodaj pytania specyficzne dla branży i stanowiska.
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model: MODEL_NAME,
     contents: prompt,
     config: {
@@ -174,7 +196,7 @@ export const generateInterviewQuestions = async (cvText: string, jobDescription:
         items: { type: Type.STRING }
       },
     },
-  });
+  }));
 
   return JSON.parse(response.text || "[]");
 };
@@ -195,7 +217,7 @@ export const analyzeSkillsGap = async (cvText: string, jobDescription: string, l
     4. Ogólną poradę karierową.
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model: MODEL_NAME,
     contents: prompt,
     config: {
@@ -234,7 +256,7 @@ export const analyzeSkillsGap = async (cvText: string, jobDescription: string, l
         required: ["matchPercentage", "missingSkills", "learningPath", "careerAdvice"]
       },
     },
-  });
+  }));
 
   return JSON.parse(response.text || "{}");
 };
@@ -254,7 +276,7 @@ export const optimizeLinkedIn = async (cvText: string, lang: string = 'pl'): Pro
     4. Listę umiejętności do wyróżnienia.
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model: MODEL_NAME,
     contents: prompt,
     config: {
@@ -271,7 +293,7 @@ export const optimizeLinkedIn = async (cvText: string, lang: string = 'pl'): Pro
         required: ["headline", "about", "experienceBulletPoints", "skillsToHighlight"]
       },
     },
-  });
+  }));
 
   return JSON.parse(response.text || "{}");
 };
@@ -300,7 +322,7 @@ export const findJobOffers = async (cvText: string, lang: string = 'pl'): Promis
     ${cvText}
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await callGeminiWithRetry(() => ai.models.generateContent({
     model: MODEL_NAME,
     contents: prompt,
     config: {
@@ -323,7 +345,7 @@ export const findJobOffers = async (cvText: string, lang: string = 'pl'): Promis
         }
       }
     },
-  });
+  }));
 
   return JSON.parse(response.text || "[]");
 };

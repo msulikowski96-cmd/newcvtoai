@@ -384,7 +384,17 @@ export default function App() {
       if (user) saveToHistory(result);
     } catch (error) {
       console.error('Analysis error:', error);
-      alert(language === 'pl' ? 'Wystąpił błąd podczas analizy. Sprawdź konsolę lub klucz API.' : 'An error occurred during analysis. Check console or API key.');
+      const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
+      
+      if (isQuotaExceeded) {
+        alert(language === 'pl' 
+          ? 'Przekroczono limit zapytań (Quota Exceeded). Proszę spróbować ponownie za chwilę lub wybrać własny klucz API.' 
+          : 'Rate limit exceeded (Quota Exceeded). Please try again in a moment or select your own API key.');
+        setHasKey(false);
+      } else {
+        alert(language === 'pl' ? 'Wystąpił błąd podczas analizy. Sprawdź konsolę lub klucz API.' : 'An error occurred during analysis. Check console or API key.');
+      }
+
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
         setHasKey(false);
       }
@@ -402,6 +412,8 @@ export default function App() {
       setActiveTab('cover-letter');
     } catch (error) {
       console.error(error);
+      const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
+      if (isQuotaExceeded) setHasKey(false);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
         setHasKey(false);
       }
@@ -419,6 +431,8 @@ export default function App() {
       setActiveTab('interview');
     } catch (error) {
       console.error(error);
+      const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
+      if (isQuotaExceeded) setHasKey(false);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
         setHasKey(false);
       }
@@ -436,6 +450,8 @@ export default function App() {
       setActiveTab('roadmap');
     } catch (error) {
       console.error(error);
+      const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
+      if (isQuotaExceeded) setHasKey(false);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
         setHasKey(false);
       }
