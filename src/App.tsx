@@ -381,10 +381,10 @@ export default function App() {
     }
 
     setIsLoading(true);
+    setActiveTab('analyze');
     try {
       const result = await analyzeCV(cvText, jobDescription, language, user?.preferences);
       setAnalysis(result);
-      setActiveTab('analyze');
       if (user) saveToHistory(result);
     } catch (error) {
       console.error('Analysis error:', error);
@@ -1014,8 +1014,8 @@ export default function App() {
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isExtracting}
-                className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-all"
+                disabled={isExtracting || isLoading}
+                className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
                 {isExtracting ? 'Extracting...' : 'Upload PDF'}
@@ -1031,8 +1031,9 @@ export default function App() {
             <textarea
               value={cvText}
               onChange={(e) => setCvText(e.target.value)}
+              disabled={isLoading}
               placeholder="Paste your CV text here or upload a PDF..."
-              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans"
+              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans disabled:bg-zinc-50 disabled:text-zinc-400"
             />
           </section>
 
@@ -1044,8 +1045,9 @@ export default function App() {
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
+              disabled={isLoading}
               placeholder="Paste the job description here..."
-              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans"
+              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans disabled:bg-zinc-50 disabled:text-zinc-400"
             />
           </section>
 
@@ -1056,7 +1058,7 @@ export default function App() {
               className="w-full py-4 bg-zinc-900 text-white rounded-xl font-semibold hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >
               {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-              Analyze & Optimize CV
+              {isLoading && activeTab === 'analyze' ? 'Analyzing...' : 'Analyze & Optimize CV'}
             </button>
             <div className="grid grid-cols-2 gap-3">
               <button

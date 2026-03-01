@@ -73,6 +73,8 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     ` : ''}
 
     🔍 KRYTERIA OCENY (każde 0-20 punktów):
+    W każdej sekcji podaj SZCZEGÓŁOWY FEEDBACK (w polu 'feedback'), odwołując się do konkretnych fragmentów CV i opisu stanowiska. Wyjaśnij dokładnie, dlaczego przyznano taką ocenę.
+
     1. FORMATOWANIE (0-20p): Czy CV jest czytelne dla systemów ATS (brak tabel, grafik, kolumn)?
     2. SŁOWA KLUCZOWE (0-20p): Czy zawiera kluczowe terminy z opisu stanowiska?
     3. STRUKTURA (0-20p): Czy sekcje są logicznie ułożone i nazwane standardowo?
@@ -87,12 +89,15 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     5. DOPASUJ ton podsumowania do preferencji użytkownika (${userPreferences?.summary_tone || 'profesjonalny'}).
 
     STRUKTURA ZOPTYMALIZOWANEGO CV:
+    Użyj następujących sekcji (lub dostosuj do preferencji użytkownika):
     # 📄 CV: [Imię i Nazwisko]
-    ## 👤 PODSUMOWANIE ZAWODOWE
+    ${userPreferences?.preferred_sections && userPreferences.preferred_sections.length > 0 
+      ? userPreferences.preferred_sections.map(s => `## ${s.toUpperCase()}`).join('\n    ')
+      : `## 👤 PODSUMOWANIE ZAWODOWE
     ## 💼 DOŚWIADCZENIE ZAWODOWE
     ${userPreferences?.include_projects ? '## 🚀 PROJEKTY' : ''}
     ## 🎓 WYKSZTAŁCENIE
-    ## 🛠️ UMIEJĘTNOŚCI
+    ## 🛠️ UMIEJĘTNOŚCI`}
   `;
 
   const response = await callGeminiWithRetry(() => ai.models.generateContent({
