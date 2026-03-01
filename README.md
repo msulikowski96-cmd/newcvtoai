@@ -2,30 +2,15 @@
 
 This project is a React SPA served by an Express backend. It is ready to be deployed to platforms like Render, Koyeb, or Vercel.
 
-## Deployment to Render (Recommended)
+## Deployment Steps (Render/Koyeb)
 
-This project includes a `render.yaml` file for easy deployment using Render Blueprints.
-
-1.  **Push to GitHub**: Push your code to a GitHub repository.
-2.  **Go to Render**: Log in to your Render dashboard.
-3.  **New Blueprint Instance**: Click **New** > **Blueprint**.
-4.  **Connect Repo**: Connect your GitHub repository.
-5.  **Configure Environment Variables**:
-    *   `GEMINI_API_KEY`: Your Google Gemini API key.
-    *   `DATABASE_URL`: (Optional) A PostgreSQL connection string (e.g., from Neon). If not provided, the app will use local SQLite (note: SQLite data is lost on Render restarts unless you use a persistent disk).
-6.  **Deploy**: Click **Deploy**.
-
-## Manual Deployment Steps
-
-If you prefer to deploy manually:
-
-1.  **Build Command**: `npm run build`
-2.  **Start Command**: `npm start`
-3.  **Environment Variables**:
-    *   `NODE_ENV`: `production`
-    *   `GEMINI_API_KEY`: Your Gemini API key.
-    *   `SESSION_SECRET`: A random string for session security.
-    *   `DATABASE_URL`: (Optional) PostgreSQL connection string.
+1.  **Connect your Repository**: Connect your GitHub/GitLab repository to your hosting provider.
+2.  **Environment Variables**:
+    *   Set `GEMINI_API_KEY` to your Google Gemini API key.
+3.  **Build Settings**:
+    *   **Build Command**: `npm run build`
+    *   **Start Command**: `npm start`
+4.  **Port**: The application runs on port `3000`.
 
 ## Local Development
 
