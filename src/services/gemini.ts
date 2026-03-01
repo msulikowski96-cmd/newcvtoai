@@ -76,10 +76,13 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     W każdej sekcji podaj SZCZEGÓŁOWY FEEDBACK (w polu 'feedback'), odwołując się do konkretnych fragmentów CV i opisu stanowiska. Wyjaśnij dokładnie, dlaczego przyznano taką ocenę.
 
     1. FORMATOWANIE (0-20p): Czy CV jest czytelne dla systemów ATS (brak tabel, grafik, kolumn)?
+       - W feedbacku wskaż konkretne elementy formatowania do poprawy (np. usunięcie kolumn, tabel) odnosząc się do oryginalnego tekstu.
     2. SŁOWA KLUCZOWE (0-20p): Czy zawiera kluczowe terminy z opisu stanowiska?
+       - W feedbacku podaj konkretne słowa kluczowe z oferty pracy, których brakuje w CV i zasugeruj, gdzie je dodać.
     3. STRUKTURA (0-20p): Czy sekcje są logicznie ułożone i nazwane standardowo?
     4. DOPASOWANIE (0-20p): Jak bardzo treść odpowiada wymaganiom roli?
     5. WPŁYW (0-20p): Czy opisy doświadczenia używają czasowników akcji i mierzalnych wyników?
+       - W feedbacku zasugeruj, jak zmienić konkretne punkty doświadczenia na takie, które zawierają czasowniki akcji i wyniki liczbowe.
 
     ZASADY OPTYMALIZACJI TREŚCI:
     1. NIE DODAWAJ żadnych fałszywych informacji.
@@ -87,6 +90,10 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     3. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska (ATS optimization).
     4. ZASTOSUJ formatowanie przyjazne dla ATS: proste nagłówki, standardowe czcionki (w tekście), brak kolumn.
     5. DOPASUJ ton podsumowania do preferencji użytkownika (${userPreferences?.summary_tone || 'profesjonalny'}).
+       - Profesjonalny: Formalny, rzeczowy, skupiony na osiągnięciach.
+       - Kreatywny: Unikalny, z pasją, pokazujący osobowość.
+       - Minimalistyczny: Zwięzły, konkretny, bez zbędnych przymiotników.
+       - Odważny: Pewny siebie, bezpośredni, podkreślający ambitne cele.
 
     STRUKTURA ZOPTYMALIZOWANEGO CV:
     Użyj następujących sekcji (lub dostosuj do preferencji użytkownika):
