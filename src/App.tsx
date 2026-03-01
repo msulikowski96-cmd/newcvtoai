@@ -1054,13 +1054,46 @@ export default function App() {
                     ) : (
                       <>
                         {/* Score Card */}
-                        <div className="flex items-center justify-between bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
-                          <div>
-                            <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">Match Score</h3>
-                            <p className="text-4xl font-bold text-zinc-900">{analysis.score}%</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          <div className="flex items-center justify-between bg-zinc-900 text-white p-6 rounded-2xl border border-zinc-800 lg:col-span-1">
+                            <div>
+                              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Overall Match</h3>
+                              <p className="text-5xl font-bold">{analysis.score}%</p>
+                            </div>
+                            <div className="w-16 h-16 rounded-full border-4 border-emerald-500 flex items-center justify-center">
+                              <div className="text-[10px] font-bold text-emerald-500">ATS OK</div>
+                            </div>
                           </div>
-                          <div className="w-16 h-16 rounded-full border-4 border-zinc-900 flex items-center justify-center">
-                            <div className="text-xs font-bold">MATCH</div>
+
+                          {/* ATS Breakdown */}
+                          <div className="bg-white p-6 rounded-2xl border border-zinc-200 lg:col-span-2">
+                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">ATS Detailed Breakdown</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                              {[
+                                { label: 'Formatting', value: analysis.atsBreakdown?.formatting || 0 },
+                                { label: 'Keywords', value: analysis.atsBreakdown?.keywords || 0 },
+                                { label: 'Structure', value: analysis.atsBreakdown?.structure || 0 },
+                                { label: 'Relevance', value: analysis.atsBreakdown?.relevance || 0 },
+                                { label: 'Impact', value: analysis.atsBreakdown?.impact || 0 },
+                              ].map((item) => (
+                                <div key={item.label} className="space-y-1">
+                                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
+                                    <span>{item.label}</span>
+                                    <span>{item.value}/20</span>
+                                  </div>
+                                  <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                                    <motion.div 
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${(item.value / 20) * 100}%` }}
+                                      className={`h-full rounded-full ${
+                                        item.value > 15 ? 'bg-emerald-500' : 
+                                        item.value > 10 ? 'bg-amber-500' : 'bg-rose-500'
+                                      }`}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
 

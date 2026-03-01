@@ -43,18 +43,19 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     ${jobDescription}
 
     🔍 KRYTERIA OCENY (każde 0-20 punktów):
-    1. STRUKTURA I FORMATOWANIE (0-20p)
-    2. JAKOŚĆ TREŚCI (0-20p)
-    3. DOPASOWANIE DO STANOWISKA (0-20p)
-    4. DOŚWIADCZENIE I UMIEJĘTNOŚCI (0-20p)
-    5. KOMPLETNOŚĆ I SZCZEGÓŁY (0-20p)
+    1. FORMATOWANIE (0-20p): Czy CV jest czytelne dla systemów ATS (brak tabel, grafik, kolumn)?
+    2. SŁOWA KLUCZOWE (0-20p): Czy zawiera kluczowe terminy z opisu stanowiska?
+    3. STRUKTURA (0-20p): Czy sekcje są logicznie ułożone i nazwane standardowo?
+    4. DOPASOWANIE (0-20p): Jak bardzo treść odpowiada wymaganiom roli?
+    5. WPŁYW (0-20p): Czy opisy doświadczenia używają czasowników akcji i mierzalnych wyników?
 
     ZASADY OPTYMALIZACJI TREŚCI:
     1. NIE DODAWAJ żadnych fałszywych informacji.
     2. NIE WYMIŚLAJ stanowisk, firm, dat ani umiejętności.
     3. PRZEPISZ tylko to co jest w oryginalnym CV, ulepszając sformułowania.
-    4. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska.
+    4. ULEPSZAJ sformułowania używając słów kluczowych z opisu stanowiska (ATS optimization).
     5. ZACHOWAJ wszystkie prawdziwe fakty z oryginalnego CV.
+    6. ZASTOSUJ formatowanie przyjazne dla ATS: proste nagłówki, standardowe czcionki (w tekście), brak kolumn.
 
     STRUKTURA ZOPTYMALIZOWANEGO CV (Używaj Markdown i Emoji dla czytelności):
     # 📄 CV: [Imię i Nazwisko]
@@ -98,8 +99,19 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
           weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Minimum 3 konkretne obszary do poprawy." },
           suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3-5 najważniejszych rekomendacji zmian." },
           optimizedContent: { type: Type.STRING, description: "Kompletny tekst zoptymalizowanego CV." },
+          atsBreakdown: {
+            type: Type.OBJECT,
+            properties: {
+              formatting: { type: Type.NUMBER, description: "Ocena formatowania 0-20." },
+              keywords: { type: Type.NUMBER, description: "Ocena słów kluczowych 0-20." },
+              structure: { type: Type.NUMBER, description: "Ocena struktury 0-20." },
+              relevance: { type: Type.NUMBER, description: "Ocena dopasowania 0-20." },
+              impact: { type: Type.NUMBER, description: "Ocena wpływu 0-20." },
+            },
+            required: ["formatting", "keywords", "structure", "relevance", "impact"],
+          },
         },
-        required: ["score", "strengths", "weaknesses", "suggestions", "optimizedContent"],
+        required: ["score", "strengths", "weaknesses", "suggestions", "optimizedContent", "atsBreakdown"],
       },
     },
   });

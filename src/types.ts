@@ -25,6 +25,13 @@ export interface CVAnalysis {
   weaknesses: string[];
   suggestions: string[];
   optimizedContent: string;
+  atsBreakdown: {
+    formatting: number;
+    keywords: number;
+    structure: number;
+    relevance: number;
+    impact: number;
+  };
 }
 
 export interface SkillsGap {
