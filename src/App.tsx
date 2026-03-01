@@ -101,6 +101,7 @@ export default function App() {
   const [profileIncludeProjects, setProfileIncludeProjects] = useState(false);
   const [profileEmphasizedKeywords, setProfileEmphasizedKeywords] = useState('');
   const [profileSummaryTone, setProfileSummaryTone] = useState<'professional' | 'creative' | 'minimalist' | 'bold'>('professional');
+  const [profilePreferredSections, setProfilePreferredSections] = useState('');
   const [customCoverLetterDetails, setCustomCoverLetterDetails] = useState('');
 
   useEffect(() => {
@@ -127,6 +128,7 @@ export default function App() {
           setProfileGithubUrl(userData.github_url || '');
           setProfileIncludeProjects(userData.preferences?.include_projects || false);
           setProfileEmphasizedKeywords(userData.preferences?.emphasized_keywords?.join(', ') || '');
+          setProfilePreferredSections(userData.preferences?.preferred_sections?.join(', ') || '');
           setProfileSummaryTone(userData.preferences?.summary_tone || 'professional');
           setTheme(userData.theme || 'light');
           fetchHistory();
@@ -268,6 +270,7 @@ export default function App() {
           preferences: {
             include_projects: profileIncludeProjects,
             emphasized_keywords: profileEmphasizedKeywords.split(',').map(k => k.trim()).filter(k => k),
+            preferred_sections: profilePreferredSections.split(',').map(k => k.trim()).filter(k => k),
             summary_tone: profileSummaryTone
           }
         }),
@@ -284,6 +287,7 @@ export default function App() {
           preferences: {
             include_projects: profileIncludeProjects,
             emphasized_keywords: profileEmphasizedKeywords.split(',').map(k => k.trim()).filter(k => k),
+            preferred_sections: profilePreferredSections.split(',').map(k => k.trim()).filter(k => k),
             summary_tone: profileSummaryTone
           }
         } : null);
@@ -860,6 +864,17 @@ export default function App() {
                       value={profileEmphasizedKeywords}
                       onChange={(e) => setProfileEmphasizedKeywords(e.target.value)}
                       placeholder="e.g. React, Node.js, AWS (comma separated)"
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-500 uppercase">Preferred Sections</label>
+                    <input
+                      type="text"
+                      value={profilePreferredSections}
+                      onChange={(e) => setProfilePreferredSections(e.target.value)}
+                      placeholder="e.g. Summary, Experience, Education (comma separated)"
                       className={`w-full px-4 py-3 border rounded-xl outline-none transition-all ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700 focus:ring-zinc-100' : 'bg-zinc-50 border-zinc-200 focus:ring-zinc-900'}`}
                     />
                   </div>

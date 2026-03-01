@@ -5,7 +5,7 @@ const getAI = () => {
   return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 };
 
-const MODEL_NAME = "gemini-3.1-pro-preview";
+const MODEL_NAME = "gemini-3-pro-preview";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -57,6 +57,13 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
   const prompt = `
     🎯 ZADANIE: Przeprowadź PROFESJONALNĄ ANALIZĘ JAKOŚCI CV i wygeneruj ZOPTYMALIZOWANĄ TREŚĆ w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
     
+    📋 DANE WEJŚCIOWE:
+    • CV kandydata:
+    ${cvText}
+
+    • Opis stanowiska:
+    ${jobDescription}
+
     ${userPreferences ? `
     PREFERENCJE UŻYTKOWNIKA:
     - Uwzględnij sekcję Projekty: ${userPreferences.include_projects ? 'TAK' : 'NIE'}
