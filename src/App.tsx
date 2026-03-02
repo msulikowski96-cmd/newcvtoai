@@ -47,6 +47,7 @@ import {
   JobOffer
 } from './services/gemini';
 import { User, CVAnalysis, SkillsGap, LinkedInOptimization, CVHistoryItem } from './types';
+import { PromoAnimation } from './components/PromoAnimation';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -84,6 +85,7 @@ export default function App() {
   const [linkedIn, setLinkedIn] = useState<LinkedInOptimization | null>(null);
   const [jobOffers, setJobOffers] = useState<JobOffer[] | null>(null);
   const [language, setLanguage] = useState<'pl' | 'en'>('pl');
+  const [showPromo, setShowPromo] = useState(false);
 
   // Auth State
   const [authEmail, setAuthEmail] = useState('');
@@ -381,10 +383,10 @@ export default function App() {
     }
 
     setIsLoading(true);
-    setActiveTab('analyze');
     try {
       const result = await analyzeCV(cvText, jobDescription, language, user?.preferences);
       setAnalysis(result);
+      setActiveTab('analyze');
       if (user) saveToHistory(result);
     } catch (error) {
       console.error('Analysis error:', error);
@@ -929,6 +931,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-[#f5f5f5] text-zinc-900'}`}>
+      {showPromo && <PromoAnimation onClose={() => setShowPromo(false)} />}
       {/* Header */}
       <header className={`border-b px-6 py-4 sticky top-0 z-10 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -944,6 +947,15 @@ export default function App() {
           
           <div className="flex items-center gap-4">
             <div className={`flex items-center p-1 rounded-xl border transition-colors ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
+              <button 
+                onClick={() => setShowPromo(true)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${theme === 'dark' ? 'text-zinc-400 hover:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900'}`}
+                title="Watch Demo"
+              >
+                <Sparkles size={12} />
+                Demo
+              </button>
+              <div className={`w-px h-4 mx-1 ${theme === 'dark' ? 'bg-zinc-700' : 'bg-zinc-200'}`} />
               <button 
                 onClick={() => setLanguage('pl')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${language === 'pl' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
@@ -1014,8 +1026,8 @@ export default function App() {
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isExtracting || isLoading}
-                className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isExtracting}
+                className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-all"
               >
                 {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
                 {isExtracting ? 'Extracting...' : 'Upload PDF'}
@@ -1031,9 +1043,8 @@ export default function App() {
             <textarea
               value={cvText}
               onChange={(e) => setCvText(e.target.value)}
-              disabled={isLoading}
               placeholder="Paste your CV text here or upload a PDF..."
-              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans disabled:bg-zinc-50 disabled:text-zinc-400"
+              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans"
             />
           </section>
 
@@ -1045,9 +1056,8 @@ export default function App() {
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
-              disabled={isLoading}
               placeholder="Paste the job description here..."
-              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans disabled:bg-zinc-50 disabled:text-zinc-400"
+              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans"
             />
           </section>
 
@@ -1058,7 +1068,7 @@ export default function App() {
               className="w-full py-4 bg-zinc-900 text-white rounded-xl font-semibold hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >
               {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-              {isLoading && activeTab === 'analyze' ? 'Analyzing...' : 'Analyze & Optimize CV'}
+              Analyze & Optimize CV
             </button>
             <div className="grid grid-cols-2 gap-3">
               <button
