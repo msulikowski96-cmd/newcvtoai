@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react'
 import { 
   FileText, 
   Briefcase, 
@@ -48,12 +48,15 @@ import {
 } from './services/gemini';
 import { User, CVAnalysis, SkillsGap, LinkedInOptimization, CVHistoryItem } from './types';
 import { PromoAnimation } from './components/PromoAnimation';
+import { LandingPage } from './components/LandingPage';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
-type View = 'app' | 'login' | 'register' | 'profile';
+type View = 'app' | 'login' | 'register' | 'profile' | 'landing' | 'privacy' | 'terms';
 
 declare global {
   interface Window {
@@ -72,7 +75,7 @@ export default function App() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [hasKey, setHasKey] = useState<boolean | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<View>('app');
+  const [view, setView] = useState<View>('landing');
   const [history, setHistory] = useState<CVHistoryItem[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +136,7 @@ export default function App() {
           setProfilePreferredSections(userData.preferences?.preferred_sections?.join(', ') || '');
           setProfileSummaryTone(userData.preferences?.summary_tone || 'professional');
           setTheme(userData.theme || 'light');
+          setView('app');
           fetchHistory();
         }
       } catch (e) {
@@ -252,7 +256,7 @@ export default function App() {
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
-    setView('app');
+    setView('landing');
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -504,6 +508,25 @@ export default function App() {
     navigator.clipboard.writeText(text);
     // Could add a toast here
   };
+
+  if (view === 'landing') {
+    return (
+      <LandingPage 
+        onGetStarted={() => setView('app')}
+        onLogin={() => setView('login')}
+        onPrivacy={() => setView('privacy')}
+        onTerms={() => setView('terms')}
+      />
+    );
+  }
+
+  if (view === 'privacy') {
+    return <PrivacyPolicy onBack={() => setView('landing')} />;
+  }
+
+  if (view === 'terms') {
+    return <TermsOfService onBack={() => setView('landing')} />;
+  }
 
   if (hasKey === false) {
     return (
@@ -930,18 +953,18 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-[#f5f5f5] text-zinc-900'}`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}>
       {showPromo && <PromoAnimation onClose={() => setShowPromo(false)} />}
       {/* Header */}
-      <header className={`border-b px-6 py-4 sticky top-0 z-10 transition-colors ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+      <header className={`border-b px-6 py-4 sticky top-0 z-20 backdrop-blur-xl transition-colors ${theme === 'dark' ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-zinc-200'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white'}`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors shadow-lg ${theme === 'dark' ? 'bg-indigo-500 text-white shadow-indigo-500/20' : 'bg-indigo-600 text-white shadow-indigo-600/20'}`}>
               <Sparkles size={20} />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">CvToAI</h1>
-              <p className={`text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>AI-Powered Career Assistant</p>
+              <p className={`text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>Career Assistant</p>
             </div>
           </div>
           
@@ -1018,18 +1041,24 @@ export default function App() {
       <main className="flex-1 max-w-7xl mx-auto w-full p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Inputs */}
         <div className="lg:col-span-5 space-y-6">
-          <section className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6 space-y-4">
+          <section className={`rounded-3xl shadow-sm border p-6 space-y-4 transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-zinc-900 font-semibold">
-                <FileText size={18} />
-                <h2>Your CV Content</h2>
+              <div className="flex items-center gap-2 font-bold text-lg">
+                <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                  <FileText size={20} />
+                </div>
+                <h2>CV Content</h2>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isExtracting}
-                className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition-all"
+                className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl transition-all ${
+                  theme === 'dark' 
+                    ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' 
+                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                }`}
               >
-                {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
+                {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                 {isExtracting ? 'Extracting...' : 'Upload PDF'}
               </button>
               <input
@@ -1040,78 +1069,122 @@ export default function App() {
                 className="hidden"
               />
             </div>
-            <textarea
-              value={cvText}
-              onChange={(e) => setCvText(e.target.value)}
-              placeholder="Paste your CV text here or upload a PDF..."
-              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans"
-            />
+            <div className="relative group">
+              <textarea
+                value={cvText}
+                onChange={(e) => setCvText(e.target.value)}
+                disabled={isLoading}
+                placeholder="Paste your CV text here or upload a PDF..."
+                className={`w-full h-64 p-5 rounded-2xl border outline-none transition-all resize-none text-sm font-sans leading-relaxed ${
+                  theme === 'dark'
+                    ? 'bg-zinc-950/50 border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 placeholder:text-zinc-600'
+                    : 'bg-zinc-50 border-zinc-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 placeholder:text-zinc-400'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              />
+              {!cvText && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className={`px-4 py-2 rounded-lg text-xs font-medium ${theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-white shadow-sm text-zinc-500'}`}>
+                    Drag & drop or paste text
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
 
-          <section className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6 space-y-4">
-            <div className="flex items-center gap-2 text-zinc-900 font-semibold mb-2">
-              <Briefcase size={18} />
+          <section className={`rounded-3xl shadow-sm border p-6 space-y-4 transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+            <div className="flex items-center gap-2 font-bold text-lg mb-2">
+              <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
+                <Briefcase size={20} />
+              </div>
               <h2>Job Description</h2>
             </div>
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
+              disabled={isLoading}
               placeholder="Paste the job description here..."
-              className="w-full h-64 p-4 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all resize-none text-sm font-sans"
+              className={`w-full h-64 p-5 rounded-2xl border outline-none transition-all resize-none text-sm font-sans leading-relaxed ${
+                theme === 'dark'
+                  ? 'bg-zinc-900/50 border-zinc-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 placeholder:text-zinc-600'
+                  : 'bg-zinc-50 border-zinc-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 placeholder:text-zinc-400'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             />
           </section>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-4">
             <button
               onClick={handleAnalyze}
               disabled={isLoading || !cvText || !jobDescription}
-              className="w-full py-4 bg-zinc-900 text-white rounded-xl font-semibold hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none flex items-center justify-center gap-3 transition-all duration-300"
             >
-              {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-              Analyze & Optimize CV
+              {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={24} /> : <Sparkles size={24} />}
+              {isLoading && activeTab === 'analyze' ? 'Analyzing...' : 'Analyze & Optimize'}
             </button>
-            <div className="grid grid-cols-2 gap-3">
+            
+            <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={handleGenerateCoverLetter}
                 disabled={isLoading || !cvText || !jobDescription}
-                className="py-3 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                  theme === 'dark'
+                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
+                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
               >
-                {isLoading && activeTab === 'cover-letter' ? <Loader2 className="animate-spin" size={18} /> : <FileEdit size={18} />}
+                {isLoading && activeTab === 'cover-letter' ? <Loader2 className="animate-spin" size={18} /> : <FileEdit size={18} className="text-emerald-500" />}
                 Cover Letter
               </button>
               <button
                 onClick={handleGenerateInterview}
                 disabled={isLoading || !cvText || !jobDescription}
-                className="py-3 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                  theme === 'dark'
+                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
+                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
               >
-                {isLoading && activeTab === 'interview' ? <Loader2 className="animate-spin" size={18} /> : <MessageSquare size={18} />}
+                {isLoading && activeTab === 'interview' ? <Loader2 className="animate-spin" size={18} /> : <MessageSquare size={18} className="text-blue-500" />}
                 Interview Prep
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            
+            <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={handleGenerateRoadmap}
                 disabled={isLoading || !cvText || !jobDescription}
-                className="py-3 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                  theme === 'dark'
+                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
+                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
               >
-                {isLoading && activeTab === 'roadmap' ? <Loader2 className="animate-spin" size={18} /> : <ChevronRight size={18} />}
+                {isLoading && activeTab === 'roadmap' ? <Loader2 className="animate-spin" size={18} /> : <ChevronRight size={18} className="text-amber-500" />}
                 Career Roadmap
               </button>
               <button
                 onClick={handleOptimizeLinkedIn}
                 disabled={isLoading || !cvText}
-                className="py-3 bg-white border border-zinc-200 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                  theme === 'dark'
+                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
+                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
               >
-                {isLoading && activeTab === 'linkedin' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                LinkedIn Optimizer
+                {isLoading && activeTab === 'linkedin' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} className="text-sky-500" />}
+                LinkedIn
               </button>
             </div>
+            
             <button
               onClick={handleFindJobs}
               disabled={isLoading || !cvText}
-              className="w-full py-4 bg-zinc-100 text-zinc-900 rounded-xl font-semibold hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              className={`w-full py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                theme === 'dark'
+                  ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                  : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
+              } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
             >
-              {isLoading && activeTab === 'jobs' ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />}
+              {isLoading && activeTab === 'jobs' ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} className="text-rose-500" />}
               Find Matching Jobs
             </button>
           </div>
@@ -1119,26 +1192,31 @@ export default function App() {
 
         {/* Right Column: Results */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 h-full flex flex-col overflow-hidden">
+          <div className={`rounded-3xl shadow-sm border h-full flex flex-col overflow-hidden transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
             {/* Tabs */}
-            <div className="flex border-b border-zinc-200 overflow-x-auto no-scrollbar">
-              {(['analyze', 'cover-letter', 'interview', 'roadmap', 'linkedin', 'jobs'] as Tab[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-none px-6 py-4 text-sm font-semibold capitalize transition-all relative ${
-                    activeTab === tab ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'
-                  }`}
-                >
-                  {tab.replace('-', ' ')}
-                  {activeTab === tab && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900"
-                    />
-                  )}
-                </button>
-              ))}
+            <div className="p-2 overflow-x-auto no-scrollbar">
+              <div className={`flex p-1 rounded-2xl ${theme === 'dark' ? 'bg-zinc-950/50' : 'bg-zinc-100/80'}`}>
+                {(['analyze', 'cover-letter', 'interview', 'roadmap', 'linkedin', 'jobs'] as Tab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-none px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-xl transition-all relative z-10 ${
+                      activeTab === tab 
+                        ? (theme === 'dark' ? 'text-white' : 'text-zinc-900') 
+                        : (theme === 'dark' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')
+                    }`}
+                  >
+                    {tab.replace('-', ' ')}
+                    {activeTab === tab && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className={`absolute inset-0 rounded-xl shadow-sm -z-10 ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Content Area */}
@@ -1162,41 +1240,70 @@ export default function App() {
                       <>
                         {/* Score Card */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                          <div className="flex items-center justify-between bg-zinc-900 text-white p-6 rounded-2xl border border-zinc-800 lg:col-span-1">
+                          <div className={`p-8 rounded-3xl border flex flex-col justify-between relative overflow-hidden group ${
+                            theme === 'dark' 
+                              ? 'bg-zinc-900 border-zinc-800' 
+                              : 'bg-white border-zinc-200'
+                          }`}>
+                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:scale-150 duration-700`} />
+                            
                             <div>
-                              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Overall Match</h3>
-                              <p className="text-5xl font-bold">{analysis.score}%</p>
+                              <h3 className={`text-xs font-bold uppercase tracking-widest mb-1 ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}`}>Overall Match</h3>
+                              <div className="flex items-baseline gap-1">
+                                <span className={`text-6xl font-black tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
+                                  {analysis.score}
+                                </span>
+                                <span className="text-2xl font-bold text-zinc-400">%</span>
+                              </div>
                             </div>
-                            <div className="w-16 h-16 rounded-full border-4 border-emerald-500 flex items-center justify-center">
-                              <div className="text-[10px] font-bold text-emerald-500">ATS OK</div>
+
+                            <div className="mt-6">
+                              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
+                                analysis.score >= 80 ? 'bg-emerald-500/10 text-emerald-500' :
+                                analysis.score >= 60 ? 'bg-amber-500/10 text-amber-500' :
+                                'bg-rose-500/10 text-rose-500'
+                              }`}>
+                                {analysis.score >= 80 ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                                {analysis.score >= 80 ? 'Excellent Match' : analysis.score >= 60 ? 'Good Potential' : 'Needs Improvement'}
+                              </div>
                             </div>
                           </div>
 
                           {/* ATS Breakdown */}
-                          <div className="bg-white p-6 rounded-2xl border border-zinc-200 lg:col-span-2">
-                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">ATS Detailed Breakdown</h4>
-                            <div className="grid grid-cols-1 gap-4">
+                          <div className={`p-6 rounded-3xl border lg:col-span-2 ${
+                            theme === 'dark' 
+                              ? 'bg-zinc-900 border-zinc-800' 
+                              : 'bg-white border-zinc-200'
+                          }`}>
+                            <h4 className={`text-xs font-bold uppercase tracking-widest mb-6 ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}`}>ATS Analysis</h4>
+                            <div className="grid grid-cols-1 gap-5">
                               {[
-                                { label: 'Formatting', data: analysis.atsBreakdown?.formatting },
-                                { label: 'Keywords', data: analysis.atsBreakdown?.keywords },
-                                { label: 'Structure', data: analysis.atsBreakdown?.structure },
-                                { label: 'Relevance', data: analysis.atsBreakdown?.relevance },
-                                { label: 'Impact', data: analysis.atsBreakdown?.impact },
+                                { label: 'Formatting', data: analysis.atsBreakdown?.formatting, icon: <FileText size={14} /> },
+                                { label: 'Keywords', data: analysis.atsBreakdown?.keywords, icon: <Key size={14} /> },
+                                { label: 'Structure', data: analysis.atsBreakdown?.structure, icon: <Briefcase size={14} /> },
+                                { label: 'Relevance', data: analysis.atsBreakdown?.relevance, icon: <CheckCircle2 size={14} /> },
+                                { label: 'Impact', data: analysis.atsBreakdown?.impact, icon: <Sparkles size={14} /> },
                               ].map((item) => (
-                                <div key={item.label} className="space-y-2 p-3 rounded-xl bg-zinc-50 border border-zinc-100">
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold uppercase tracking-tighter">{item.label}</span>
-                                    <span className={`text-xs font-bold ${
-                                      (item.data?.score || 0) > 15 ? 'text-emerald-600' : 
-                                      (item.data?.score || 0) > 10 ? 'text-amber-600' : 'text-rose-600'
+                                <div key={item.label} className="space-y-2">
+                                  <div className="flex justify-between items-end">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`p-1.5 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-500'}`}>
+                                        {item.icon}
+                                      </div>
+                                      <span className={`text-sm font-bold ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>{item.label}</span>
+                                    </div>
+                                    <span className={`text-sm font-bold ${
+                                      (item.data?.score || 0) > 15 ? 'text-emerald-500' : 
+                                      (item.data?.score || 0) > 10 ? 'text-amber-500' : 'text-rose-500'
                                     }`}>
                                       {item.data?.score || 0}/20
                                     </span>
                                   </div>
-                                  <div className="h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+                                  <div className={`h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
                                     <motion.div 
                                       initial={{ width: 0 }}
                                       animate={{ width: `${((item.data?.score || 0) / 20) * 100}%` }}
+                                      transition={{ duration: 1, ease: "easeOut" }}
                                       className={`h-full rounded-full ${
                                         (item.data?.score || 0) > 15 ? 'bg-emerald-500' : 
                                         (item.data?.score || 0) > 10 ? 'bg-amber-500' : 'bg-rose-500'
@@ -1204,7 +1311,7 @@ export default function App() {
                                     />
                                   </div>
                                   {item.data?.feedback && (
-                                    <p className="text-[11px] text-zinc-500 leading-tight italic">
+                                    <p className={`text-xs leading-relaxed pl-9 ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}`}>
                                       {item.data.feedback}
                                     </p>
                                   )}
@@ -1216,27 +1323,41 @@ export default function App() {
 
                         {/* Strengths & Weaknesses */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-emerald-600 font-semibold">
-                              <CheckCircle2 size={18} />
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-emerald-500 font-bold text-lg">
+                              <CheckCircle2 size={20} />
                               <h4>Strengths</h4>
                             </div>
-                            <ul className="space-y-2">
+                            <ul className="space-y-3">
                               {analysis.strengths.map((s, i) => (
-                                <li key={i} className="text-sm bg-emerald-50 text-emerald-700 p-3 rounded-xl border border-emerald-100">
+                                <li key={i} className={`text-sm p-4 rounded-2xl border flex gap-3 ${
+                                  theme === 'dark' 
+                                    ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-200' 
+                                    : 'bg-emerald-50 border-emerald-100 text-emerald-800'
+                                }`}>
+                                  <div className="shrink-0 mt-0.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${theme === 'dark' ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
+                                  </div>
                                   {s}
                                 </li>
                               ))}
                             </ul>
                           </div>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-amber-600 font-semibold">
-                              <AlertCircle size={18} />
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-amber-500 font-bold text-lg">
+                              <AlertCircle size={20} />
                               <h4>Areas for Improvement</h4>
                             </div>
-                            <ul className="space-y-2">
+                            <ul className="space-y-3">
                               {analysis.weaknesses.map((w, i) => (
-                                <li key={i} className="text-sm bg-amber-50 text-amber-700 p-3 rounded-xl border border-amber-100">
+                                <li key={i} className={`text-sm p-4 rounded-2xl border flex gap-3 ${
+                                  theme === 'dark' 
+                                    ? 'bg-amber-500/5 border-amber-500/10 text-amber-200' 
+                                    : 'bg-amber-50 border-amber-100 text-amber-800'
+                                }`}>
+                                  <div className="shrink-0 mt-0.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${theme === 'dark' ? 'bg-amber-400' : 'bg-amber-500'}`} />
+                                  </div>
                                   {w}
                                 </li>
                               ))}
@@ -1245,36 +1366,51 @@ export default function App() {
                         </div>
 
                         {/* Suggestions */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-zinc-900 font-semibold">
-                            <Lightbulb size={18} />
-                            <h4>Actionable Suggestions</h4>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 text-zinc-900 font-bold text-lg">
+                            <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-yellow-400' : 'bg-yellow-50 text-yellow-600'}`}>
+                              <Lightbulb size={20} />
+                            </div>
+                            <h4 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Actionable Suggestions</h4>
                           </div>
-                          <div className="grid grid-cols-1 gap-2">
+                          <div className="grid grid-cols-1 gap-3">
                             {analysis.suggestions.map((s, i) => (
-                              <div key={i} className="flex gap-3 text-sm p-4 bg-white border border-zinc-200 rounded-xl">
-                                <ChevronRight size={16} className="text-zinc-400 shrink-0 mt-0.5" />
-                                <span>{s}</span>
+                              <div key={i} className={`flex gap-4 text-sm p-5 rounded-2xl border transition-all hover:scale-[1.01] ${
+                                theme === 'dark' 
+                                  ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-300' 
+                                  : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm'
+                              }`}>
+                                <div className={`shrink-0 mt-0.5 p-1 rounded-full ${theme === 'dark' ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'}`}>
+                                  <ChevronRight size={14} />
+                                </div>
+                                <span className="leading-relaxed">{s}</span>
                               </div>
                             ))}
                           </div>
                         </div>
 
                         {/* Optimized Content */}
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-zinc-900 font-semibold">
-                              <Sparkles size={18} />
-                              <h4>Optimized CV Content</h4>
+                            <div className="flex items-center gap-2 text-zinc-900 font-bold text-lg">
+                              <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                                <Sparkles size={20} />
+                              </div>
+                              <h4 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Optimized CV Content</h4>
                             </div>
                             <button 
                               onClick={() => copyToClipboard(analysis.optimizedContent)}
-                              className="p-2 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-500"
+                              className={`p-2 rounded-xl transition-colors ${
+                                theme === 'dark' 
+                                  ? 'hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100' 
+                                  : 'hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900'
+                              }`}
                             >
-                              <Copy size={16} />
+                              <Copy size={20} />
                             </button>
                           </div>
-                          <div className="p-8 sm:p-16 bg-white border border-zinc-200 rounded-sm shadow-2xl min-h-[1056px] max-w-[816px] mx-auto font-sans">
+                          <div className="p-8 sm:p-16 bg-white text-zinc-900 border border-zinc-200 rounded-sm shadow-2xl min-h-[1056px] max-w-[816px] mx-auto font-sans relative">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
                             <Markdown
                               components={{
                                 h1: ({node, ...props}) => <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 border-b-4 border-zinc-900 pb-6 mb-8 uppercase tracking-widest text-center" {...props} />,
@@ -1304,28 +1440,38 @@ export default function App() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-6"
                   >
-                    <div className="bg-zinc-900 text-white p-6 rounded-3xl border border-zinc-800 space-y-4">
+                    <div className={`p-6 rounded-3xl border space-y-4 ${
+                      theme === 'dark' 
+                        ? 'bg-zinc-900 border-zinc-800' 
+                        : 'bg-white border-zinc-200'
+                    }`}>
                       <div className="flex items-center gap-2">
-                        <FileEdit size={20} className="text-emerald-400" />
-                        <h3 className="font-bold uppercase tracking-widest text-xs">Tailor Your Cover Letter</h3>
+                        <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                          <FileEdit size={20} />
+                        </div>
+                        <h3 className={`font-bold uppercase tracking-widest text-xs ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-500'}`}>Tailor Your Cover Letter</h3>
                       </div>
-                      <p className="text-xs text-zinc-400 leading-relaxed">
+                      <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>
                         Add specific details about the company culture, a recent project they completed, or why you're a perfect fit for this specific team.
                       </p>
                       <textarea
                         value={customCoverLetterDetails}
                         onChange={(e) => setCustomCoverLetterDetails(e.target.value)}
                         placeholder="e.g. I know the company is focusing on expanding their cloud infrastructure and I have 3 years of experience with AWS migrations..."
-                        className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl outline-none transition-all h-24 resize-none text-sm focus:ring-1 focus:ring-emerald-500"
+                        className={`w-full px-5 py-4 rounded-2xl outline-none transition-all h-32 resize-none text-sm leading-relaxed ${
+                          theme === 'dark'
+                            ? 'bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 placeholder:text-zinc-600'
+                            : 'bg-zinc-50 border border-zinc-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 placeholder:text-zinc-400'
+                        }`}
                       />
                       <button
                         onClick={handleGenerateCoverLetter}
                         disabled={isLoading || !cvText || !jobDescription}
-                        className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-900 font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
                       >
-                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
+                        {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
                           <>
-                            <Sparkles size={18} />
+                            <Sparkles size={20} />
                             {coverLetter ? 'Regenerate Cover Letter' : 'Generate Cover Letter'}
                           </>
                         )}
@@ -1398,13 +1544,19 @@ export default function App() {
                         </div>
                         <div className="space-y-4">
                           {interviewQuestions.map((q, i) => (
-                            <div key={i} className="p-5 bg-white border border-zinc-200 rounded-2xl hover:border-zinc-400 transition-all group">
-                              <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-bold text-zinc-500 shrink-0">
+                            <div key={i} className={`p-6 rounded-2xl border transition-all group hover:scale-[1.01] ${
+                              theme === 'dark' 
+                                ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' 
+                                : 'bg-white border-zinc-200 hover:border-zinc-300 shadow-sm'
+                            }`}>
+                              <div className="flex gap-5">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 shadow-sm ${
+                                  theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-500'
+                                }`}>
                                   {i + 1}
                                 </div>
                                 <div className="space-y-2">
-                                  <p className="text-zinc-900 font-medium leading-relaxed">{q}</p>
+                                  <p className={`font-medium leading-relaxed ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>{q}</p>
                                 </div>
                               </div>
                             </div>
@@ -1431,38 +1583,49 @@ export default function App() {
                       </div>
                     ) : (
                       <>
-                        <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
-                          <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-2">Overall Match</h3>
-                          <div className="flex items-center gap-4">
-                            <div className="flex-1 h-3 bg-zinc-200 rounded-full overflow-hidden">
+                        <div className={`p-8 rounded-3xl border ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+                          <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}`}>Overall Match</h3>
+                          <div className="flex items-center gap-6">
+                            <div className={`flex-1 h-4 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
                               <motion.div 
                                 initial={{ width: 0 }}
                                 animate={{ width: `${skillsGap.matchPercentage}%` }}
-                                className="h-full bg-zinc-900"
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className={`h-full rounded-full ${
+                                  skillsGap.matchPercentage >= 80 ? 'bg-emerald-500' :
+                                  skillsGap.matchPercentage >= 60 ? 'bg-amber-500' :
+                                  'bg-rose-500'
+                                }`}
                               />
                             </div>
-                            <span className="text-2xl font-bold">{skillsGap.matchPercentage}%</span>
+                            <span className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>{skillsGap.matchPercentage}%</span>
                           </div>
                         </div>
 
                         <div className="space-y-4">
-                          <h4 className="font-semibold text-zinc-900 flex items-center gap-2">
-                            <AlertCircle size={18} className="text-amber-500" />
+                          <h4 className={`font-bold text-lg flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
+                            <div className={`p-1.5 rounded-lg ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500' : 'bg-amber-50 text-amber-600'}`}>
+                              <AlertCircle size={18} />
+                            </div>
                             Missing Skills & Gaps
                           </h4>
                           <div className="grid grid-cols-1 gap-3">
                             {skillsGap.missingSkills.map((s, i) => (
-                              <div key={i} className="p-4 bg-white border border-zinc-200 rounded-xl flex items-start gap-3">
-                                <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${
-                                  s.importance === 'high' ? 'bg-red-100 text-red-700' :
-                                  s.importance === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                  'bg-blue-100 text-blue-700'
+                              <div key={i} className={`p-5 rounded-2xl border flex items-start gap-4 transition-all ${
+                                theme === 'dark' 
+                                  ? 'bg-zinc-900 border-zinc-800' 
+                                  : 'bg-white border-zinc-200 shadow-sm'
+                              }`}>
+                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase mt-1 tracking-wide ${
+                                  s.importance === 'high' ? 'bg-rose-500/10 text-rose-600' :
+                                  s.importance === 'medium' ? 'bg-amber-500/10 text-amber-600' :
+                                  'bg-blue-500/10 text-blue-600'
                                 }`}>
                                   {s.importance}
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-sm">{s.skill}</p>
-                                  <p className="text-xs text-zinc-500">{s.reason}</p>
+                                  <p className={`font-bold text-sm mb-1 ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>{s.skill}</p>
+                                  <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-500'}`}>{s.reason}</p>
                                 </div>
                               </div>
                             ))}
@@ -1470,21 +1633,33 @@ export default function App() {
                         </div>
 
                         <div className="space-y-4">
-                          <h4 className="font-semibold text-zinc-900 flex items-center gap-2">
-                            <Lightbulb size={18} className="text-emerald-500" />
+                          <h4 className={`font-bold text-lg flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
+                            <div className={`p-1.5 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-emerald-50 text-emerald-600'}`}>
+                              <Lightbulb size={18} />
+                            </div>
                             Recommended Learning Path
                           </h4>
                           <div className="space-y-3">
                             {skillsGap.learningPath.map((step, i) => (
-                              <div key={i} className="flex gap-4 p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
-                                <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold shrink-0">
+                              <div key={i} className={`flex gap-5 p-5 rounded-2xl border transition-all ${
+                                theme === 'dark' 
+                                  ? 'bg-zinc-900/50 border-zinc-800' 
+                                  : 'bg-emerald-50/30 border-emerald-100'
+                              }`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                  theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                                }`}>
                                   {i + 1}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-semibold text-emerald-900">{step.step}</p>
-                                  <div className="flex gap-3 mt-1">
-                                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded uppercase">{step.resourceType}</span>
-                                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded uppercase">{step.duration}</span>
+                                  <p className={`text-sm font-bold mb-2 ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>{step.step}</p>
+                                  <div className="flex gap-2">
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide ${
+                                      theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-zinc-500 border border-zinc-200'
+                                    }`}>{step.resourceType}</span>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide ${
+                                      theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-zinc-500 border border-zinc-200'
+                                    }`}>{step.duration}</span>
                                   </div>
                                 </div>
                               </div>
@@ -1492,9 +1667,9 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="p-6 bg-zinc-900 text-zinc-100 rounded-2xl">
-                          <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Career Advice</h4>
-                          <p className="text-sm leading-relaxed italic">"{skillsGap.careerAdvice}"</p>
+                        <div className={`p-8 rounded-3xl ${theme === 'dark' ? 'bg-zinc-900 text-zinc-400' : 'bg-zinc-900 text-zinc-400'}`}>
+                          <h4 className="text-xs font-bold uppercase tracking-widest mb-3 opacity-50">Career Advice</h4>
+                          <p className="text-sm leading-relaxed italic text-zinc-300">"{skillsGap.careerAdvice}"</p>
                         </div>
                       </>
                     )}
@@ -1519,30 +1694,42 @@ export default function App() {
                       <>
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-zinc-900">Headline</h4>
-                            <button onClick={() => copyToClipboard(linkedIn.headline)} className="p-1.5 hover:bg-zinc-100 rounded text-zinc-400"><Copy size={14} /></button>
+                            <h4 className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>Headline</h4>
+                            <button onClick={() => copyToClipboard(linkedIn.headline)} className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-500'}`}><Copy size={16} /></button>
                           </div>
-                          <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium">
+                          <div className={`p-5 rounded-2xl border text-sm font-medium transition-all ${
+                            theme === 'dark' 
+                              ? 'bg-zinc-900 border-zinc-800 text-zinc-300' 
+                              : 'bg-zinc-50 border-zinc-200 text-zinc-800'
+                          }`}>
                             {linkedIn.headline}
                           </div>
                         </div>
 
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-zinc-900">About Section</h4>
-                            <button onClick={() => copyToClipboard(linkedIn.about)} className="p-1.5 hover:bg-zinc-100 rounded text-zinc-400"><Copy size={14} /></button>
+                            <h4 className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>About Section</h4>
+                            <button onClick={() => copyToClipboard(linkedIn.about)} className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-500'}`}><Copy size={16} /></button>
                           </div>
-                          <div className="p-6 bg-white border border-zinc-200 rounded-xl text-sm leading-relaxed whitespace-pre-wrap">
+                          <div className={`p-6 rounded-2xl border text-sm leading-relaxed whitespace-pre-wrap transition-all ${
+                            theme === 'dark' 
+                              ? 'bg-zinc-900 border-zinc-800 text-zinc-300' 
+                              : 'bg-white border-zinc-200 text-zinc-700'
+                          }`}>
                             {linkedIn.about}
                           </div>
                         </div>
 
                         <div className="space-y-3">
-                          <h4 className="font-semibold text-zinc-900">Experience Highlights</h4>
+                          <h4 className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>Experience Highlights</h4>
                           <div className="space-y-2">
                             {linkedIn.experienceBulletPoints.map((point, i) => (
-                              <div key={i} className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm flex gap-3">
-                                <ChevronRight size={14} className="text-zinc-400 shrink-0 mt-1" />
+                              <div key={i} className={`p-4 rounded-2xl border text-sm flex gap-3 transition-all ${
+                                theme === 'dark' 
+                                  ? 'bg-zinc-900 border-zinc-800 text-zinc-300' 
+                                  : 'bg-zinc-50 border-zinc-200 text-zinc-700'
+                              }`}>
+                                <ChevronRight size={16} className="text-zinc-400 shrink-0 mt-0.5" />
                                 <span>{point}</span>
                               </div>
                             ))}
@@ -1550,10 +1737,14 @@ export default function App() {
                         </div>
 
                         <div className="space-y-3">
-                          <h4 className="font-semibold text-zinc-900">Skills to Highlight</h4>
+                          <h4 className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-zinc-900'}`}>Skills to Highlight</h4>
                           <div className="flex flex-wrap gap-2">
                             {linkedIn.skillsToHighlight.map((skill, i) => (
-                              <span key={i} className="px-3 py-1 bg-zinc-900 text-white text-xs font-medium rounded-full">
+                              <span key={i} className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-all ${
+                                theme === 'dark' 
+                                  ? 'bg-zinc-800 text-zinc-300 border border-zinc-700' 
+                                  : 'bg-zinc-900 text-white shadow-sm'
+                              }`}>
                                 {skill}
                               </span>
                             ))}
@@ -1586,19 +1777,31 @@ export default function App() {
                             href={job.link} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className={`p-6 rounded-2xl border transition-all group block ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' : 'bg-white border-zinc-200 hover:border-zinc-300'}`}
+                            className={`p-6 rounded-3xl border transition-all group block hover:scale-[1.01] ${
+                              theme === 'dark' 
+                                ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' 
+                                : 'bg-white border-zinc-200 hover:border-zinc-300 shadow-sm hover:shadow-md'
+                            }`}
                           >
-                            <div className="flex justify-between items-start mb-2">
+                            <div className="flex justify-between items-start mb-3">
                               <div>
-                                <h4 className="font-bold text-lg group-hover:text-zinc-500 transition-colors">{job.title}</h4>
-                                <p className="text-sm font-medium text-zinc-500">
+                                <h4 className={`font-bold text-lg transition-colors ${
+                                  theme === 'dark' ? 'text-zinc-100 group-hover:text-indigo-400' : 'text-zinc-900 group-hover:text-indigo-600'
+                                }`}>{job.title}</h4>
+                                <p className={`text-sm font-medium mt-1 ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>
                                   {job.company} • {job.location}
-                                  {job.date_posted && <span className="ml-2 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full text-xs">{job.date_posted}</span>}
+                                  {job.date_posted && <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide ${
+                                    theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-600'
+                                  }`}>{job.date_posted}</span>}
                                 </p>
                               </div>
-                              <ChevronRight size={20} className="text-zinc-300 group-hover:translate-x-1 transition-transform shrink-0 ml-4" />
+                              <div className={`p-2 rounded-full transition-all ${
+                                theme === 'dark' ? 'bg-zinc-800 text-zinc-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-400' : 'bg-zinc-100 text-zinc-400 group-hover:bg-indigo-50 group-hover:text-indigo-600'
+                              }`}>
+                                <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                              </div>
                             </div>
-                            <p className="text-sm text-zinc-500 mt-3">{job.snippet}</p>
+                            <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>{job.snippet}</p>
                           </a>
                         ))}
                       </div>
