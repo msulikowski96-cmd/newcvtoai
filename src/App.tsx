@@ -89,6 +89,7 @@ export default function App() {
   const [jobOffers, setJobOffers] = useState<JobOffer[] | null>(null);
   const [language, setLanguage] = useState<'pl' | 'en'>('pl');
   const [showPromo, setShowPromo] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'input' | 'results'>('input');
 
   // Auth State
   const [authEmail, setAuthEmail] = useState('');
@@ -391,6 +392,7 @@ export default function App() {
       const result = await analyzeCV(cvText, jobDescription, language, user?.preferences);
       setAnalysis(result);
       setActiveTab('analyze');
+      setMobileTab('results');
       if (user) saveToHistory(result);
     } catch (error) {
       console.error('Analysis error:', error);
@@ -420,6 +422,7 @@ export default function App() {
       const result = await generateCoverLetter(cvText, jobDescription, language, customCoverLetterDetails);
       setCoverLetter(result);
       setActiveTab('cover-letter');
+      setMobileTab('results');
     } catch (error) {
       console.error(error);
       const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
@@ -439,6 +442,7 @@ export default function App() {
       const result = await generateInterviewQuestions(cvText, jobDescription, language);
       setInterviewQuestions(result);
       setActiveTab('interview');
+      setMobileTab('results');
     } catch (error) {
       console.error(error);
       const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
@@ -458,6 +462,7 @@ export default function App() {
       const result = await analyzeSkillsGap(cvText, jobDescription, language);
       setSkillsGap(result);
       setActiveTab('roadmap');
+      setMobileTab('results');
     } catch (error) {
       console.error(error);
       const isQuotaExceeded = error instanceof Error && (error.message.includes("429") || error.message.includes("RESOURCE_EXHAUSTED"));
@@ -477,6 +482,7 @@ export default function App() {
       const result = await optimizeLinkedIn(cvText, language);
       setLinkedIn(result);
       setActiveTab('linkedin');
+      setMobileTab('results');
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
@@ -494,6 +500,7 @@ export default function App() {
       const result = await findJobOffers(cvText, language);
       setJobOffers(result);
       setActiveTab('jobs');
+      setMobileTab('results');
     } catch (error) {
       console.error(error);
       if (error instanceof Error && error.message.includes("Requested entity was not found")) {
@@ -956,154 +963,149 @@ export default function App() {
     <div className={`min-h-screen flex flex-col transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}>
       {showPromo && <PromoAnimation onClose={() => setShowPromo(false)} />}
       {/* Header */}
-      <header className={`border-b px-6 py-4 sticky top-0 z-20 backdrop-blur-xl transition-colors ${theme === 'dark' ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-zinc-200'}`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors shadow-lg ${theme === 'dark' ? 'bg-indigo-500 text-white shadow-indigo-500/20' : 'bg-indigo-600 text-white shadow-indigo-600/20'}`}>
-              <Sparkles size={20} />
+      <header className={`border-b sticky top-0 z-20 backdrop-blur-xl transition-colors ${theme === 'dark' ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-zinc-200'}`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-2">
+          {/* Logo */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-lg ${theme === 'dark' ? 'bg-indigo-500 text-white shadow-indigo-500/20' : 'bg-indigo-600 text-white shadow-indigo-600/20'}`}>
+              <Sparkles size={16} />
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">CvToAI</h1>
-              <p className={`text-[10px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>Career Assistant</p>
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold tracking-tight leading-none">CvToAI</h1>
+              <p className={`text-[9px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>Career Assistant</p>
             </div>
+            <h1 className="sm:hidden text-base font-bold tracking-tight">CvToAI</h1>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className={`flex items-center p-1 rounded-xl border transition-colors ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
+
+          {/* Mobile tab switcher */}
+          <div className={`flex lg:hidden items-center p-0.5 rounded-xl border transition-colors ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
+            <button
+              onClick={() => setMobileTab('input')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mobileTab === 'input' ? (theme === 'dark' ? 'bg-zinc-700 text-white' : 'bg-white text-zinc-900 shadow-sm') : (theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500')}`}
+            >
+              Dane
+            </button>
+            <button
+              onClick={() => setMobileTab('results')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mobileTab === 'results' ? (theme === 'dark' ? 'bg-zinc-700 text-white' : 'bg-white text-zinc-900 shadow-sm') : (theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500')}`}
+            >
+              Wyniki
+            </button>
+          </div>
+
+          {/* Right controls */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className={`hidden sm:flex items-center p-1 rounded-xl border transition-colors ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
               <button 
                 onClick={() => setShowPromo(true)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${theme === 'dark' ? 'text-zinc-400 hover:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900'}`}
-                title="Watch Demo"
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${theme === 'dark' ? 'text-zinc-400 hover:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900'}`}
               >
-                <Sparkles size={12} />
+                <Sparkles size={11} />
                 Demo
               </button>
-              <div className={`w-px h-4 mx-1 ${theme === 'dark' ? 'bg-zinc-700' : 'bg-zinc-200'}`} />
+              <div className={`w-px h-4 mx-0.5 ${theme === 'dark' ? 'bg-zinc-700' : 'bg-zinc-200'}`} />
               <button 
                 onClick={() => setLanguage('pl')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${language === 'pl' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
-              >
-                PL
-              </button>
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${language === 'pl' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
+              >PL</button>
               <button 
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${language === 'en' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
-              >
-                EN
-              </button>
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${language === 'en' ? (theme === 'dark' ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-white') : 'text-zinc-500'}`}
+              >EN</button>
             </div>
 
             <button 
               onClick={toggleTheme}
               className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'}`}
             >
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
             {user ? (
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setView('profile')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50'}`}
-                >
-                  <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center border ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <UserIcon size={16} className="text-zinc-400" />
-                    )}
-                  </div>
-                  <span className={`text-sm font-semibold hidden sm:inline ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>{user.name}</span>
-                </button>
-              </div>
+              <button 
+                onClick={() => setView('profile')}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50'}`}
+              >
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden flex items-center justify-center border shrink-0 ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon size={14} className="text-zinc-400" />
+                  )}
+                </div>
+                <span className={`text-sm font-semibold hidden sm:inline ${theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700'}`}>{user.name}</span>
+              </button>
             ) : (
               <button 
                 onClick={() => setView('login')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${theme === 'dark' ? 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}
               >
-                Sign In
+                Zaloguj
               </button>
             )}
-            
-            <div className={`w-px h-6 mx-2 ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
 
             <button 
               onClick={() => { setCvText(''); setJobDescription(''); setAnalysis(null); setCoverLetter(null); setInterviewQuestions(null); setSkillsGap(null); setLinkedIn(null); }}
-              className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
-              title="Clear All"
+              className={`p-2 rounded-xl transition-colors ${theme === 'dark' ? 'text-zinc-600 hover:text-red-400 hover:bg-zinc-800' : 'text-zinc-400 hover:text-red-500 hover:bg-red-50'}`}
+              title="Wyczyść wszystko"
             >
-              <Trash2 size={20} />
+              <Trash2 size={16} />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 py-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8">
         {/* Left Column: Inputs */}
-        <div className="lg:col-span-5 space-y-6">
-          <section className={`rounded-3xl shadow-sm border p-6 space-y-4 transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 font-bold text-lg">
-                <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
-                  <FileText size={20} />
+        <div className={`lg:col-span-5 space-y-4 sm:space-y-6 ${mobileTab === 'results' ? 'hidden lg:block' : 'block'}`}>
+          <section className={`rounded-2xl sm:rounded-3xl shadow-sm border p-4 sm:p-6 space-y-3 sm:space-y-4 transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-base sm:text-lg">
+                <div className={`p-1.5 sm:p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                  <FileText size={18} />
                 </div>
-                <h2>CV Content</h2>
+                <h2>Treść CV</h2>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isExtracting}
-                className={`flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl transition-all ${
+                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl transition-all ${
                   theme === 'dark' 
                     ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' 
                     : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
                 }`}
               >
-                {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                {isExtracting ? 'Extracting...' : 'Upload PDF'}
+                {isExtracting ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                {isExtracting ? 'Wyodrębnianie...' : 'Wgraj PDF'}
               </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".pdf"
-                className="hidden"
-              />
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf" className="hidden" />
             </div>
-            <div className="relative group">
-              <textarea
-                value={cvText}
-                onChange={(e) => setCvText(e.target.value)}
-                disabled={isLoading}
-                placeholder="Paste your CV text here or upload a PDF..."
-                className={`w-full h-64 p-5 rounded-2xl border outline-none transition-all resize-none text-sm font-sans leading-relaxed ${
-                  theme === 'dark'
-                    ? 'bg-zinc-950/50 border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 placeholder:text-zinc-600'
-                    : 'bg-zinc-50 border-zinc-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 placeholder:text-zinc-400'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              />
-              {!cvText && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className={`px-4 py-2 rounded-lg text-xs font-medium ${theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-white shadow-sm text-zinc-500'}`}>
-                    Drag & drop or paste text
-                  </div>
-                </div>
-              )}
-            </div>
+            <textarea
+              value={cvText}
+              onChange={(e) => setCvText(e.target.value)}
+              disabled={isLoading}
+              placeholder="Wklej tekst CV lub wgraj PDF..."
+              className={`w-full h-44 sm:h-56 lg:h-64 p-4 sm:p-5 rounded-xl sm:rounded-2xl border outline-none transition-all resize-none text-sm font-sans leading-relaxed ${
+                theme === 'dark'
+                  ? 'bg-zinc-950/50 border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 placeholder:text-zinc-600'
+                  : 'bg-zinc-50 border-zinc-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 placeholder:text-zinc-400'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            />
           </section>
 
-          <section className={`rounded-3xl shadow-sm border p-6 space-y-4 transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
-            <div className="flex items-center gap-2 font-bold text-lg mb-2">
-              <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
-                <Briefcase size={20} />
+          <section className={`rounded-2xl sm:rounded-3xl shadow-sm border p-4 sm:p-6 space-y-3 sm:space-y-4 transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+            <div className="flex items-center gap-2 font-bold text-base sm:text-lg">
+              <div className={`p-1.5 sm:p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
+                <Briefcase size={18} />
               </div>
-              <h2>Job Description</h2>
+              <h2>Opis stanowiska</h2>
             </div>
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               disabled={isLoading}
-              placeholder="Paste the job description here..."
-              className={`w-full h-64 p-5 rounded-2xl border outline-none transition-all resize-none text-sm font-sans leading-relaxed ${
+              placeholder="Wklej opis oferty pracy..."
+              className={`w-full h-44 sm:h-56 lg:h-64 p-4 sm:p-5 rounded-xl sm:rounded-2xl border outline-none transition-all resize-none text-sm font-sans leading-relaxed ${
                 theme === 'dark'
                   ? 'bg-zinc-900/50 border-zinc-800 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 placeholder:text-zinc-600'
                   : 'bg-zinc-50 border-zinc-200 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 placeholder:text-zinc-400'
@@ -1111,87 +1113,56 @@ export default function App() {
             />
           </section>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-3">
             <button
               onClick={handleAnalyze}
               disabled={isLoading || !cvText || !jobDescription}
-              className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none flex items-center justify-center gap-3 transition-all duration-300"
+              className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none flex items-center justify-center gap-2 sm:gap-3 transition-all duration-300"
             >
-              {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={24} /> : <Sparkles size={24} />}
-              {isLoading && activeTab === 'analyze' ? 'Analyzing...' : 'Analyze & Optimize'}
+              {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+              {isLoading && activeTab === 'analyze' ? 'Analizuję...' : 'Analizuj i Optymalizuj'}
             </button>
             
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={handleGenerateCoverLetter}
-                disabled={isLoading || !cvText || !jobDescription}
-                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                  theme === 'dark'
-                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
-                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
-              >
-                {isLoading && activeTab === 'cover-letter' ? <Loader2 className="animate-spin" size={18} /> : <FileEdit size={18} className="text-emerald-500" />}
-                Cover Letter
-              </button>
-              <button
-                onClick={handleGenerateInterview}
-                disabled={isLoading || !cvText || !jobDescription}
-                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                  theme === 'dark'
-                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
-                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
-              >
-                {isLoading && activeTab === 'interview' ? <Loader2 className="animate-spin" size={18} /> : <MessageSquare size={18} className="text-blue-500" />}
-                Interview Prep
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={handleGenerateRoadmap}
-                disabled={isLoading || !cvText || !jobDescription}
-                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                  theme === 'dark'
-                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
-                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
-              >
-                {isLoading && activeTab === 'roadmap' ? <Loader2 className="animate-spin" size={18} /> : <ChevronRight size={18} className="text-amber-500" />}
-                Career Roadmap
-              </button>
-              <button
-                onClick={handleOptimizeLinkedIn}
-                disabled={isLoading || !cvText}
-                className={`py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                  theme === 'dark'
-                    ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
-                } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
-              >
-                {isLoading && activeTab === 'linkedin' ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} className="text-sky-500" />}
-                LinkedIn
-              </button>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              {[
+                { onClick: handleGenerateCoverLetter, tab: 'cover-letter', icon: <FileEdit size={16} className="text-emerald-500" />, label: 'List Motywacyjny', disabled: isLoading || !cvText || !jobDescription },
+                { onClick: handleGenerateInterview, tab: 'interview', icon: <MessageSquare size={16} className="text-blue-500" />, label: 'Rozmowa kwal.', disabled: isLoading || !cvText || !jobDescription },
+                { onClick: handleGenerateRoadmap, tab: 'roadmap', icon: <ChevronRight size={16} className="text-amber-500" />, label: 'Ścieżka kariery', disabled: isLoading || !cvText || !jobDescription },
+                { onClick: handleOptimizeLinkedIn, tab: 'linkedin', icon: <Sparkles size={16} className="text-sky-500" />, label: 'LinkedIn', disabled: isLoading || !cvText },
+              ].map((btn) => (
+                <button
+                  key={btn.tab}
+                  onClick={btn.onClick}
+                  disabled={btn.disabled}
+                  className={`py-3 rounded-xl font-semibold border flex items-center justify-center gap-1.5 text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                    theme === 'dark'
+                      ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                      : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
+                  } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+                >
+                  {isLoading && activeTab === btn.tab ? <Loader2 className="animate-spin" size={14} /> : btn.icon}
+                  <span className="truncate">{btn.label}</span>
+                </button>
+              ))}
             </div>
             
             <button
               onClick={handleFindJobs}
               disabled={isLoading || !cvText}
-              className={`w-full py-4 rounded-2xl font-semibold border flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
+              className={`w-full py-3 rounded-xl font-semibold border flex items-center justify-center gap-2 text-sm transition-all hover:scale-[1.02] active:scale-[0.98] ${
                 theme === 'dark'
                   ? 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-300'
                   : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-700 shadow-sm hover:shadow-md'
               } disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
             >
-              {isLoading && activeTab === 'jobs' ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} className="text-rose-500" />}
-              Find Matching Jobs
+              {isLoading && activeTab === 'jobs' ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} className="text-rose-500" />}
+              Znajdź pasujące oferty
             </button>
           </div>
         </div>
 
         {/* Right Column: Results */}
-        <div className="lg:col-span-7">
+        <div className={`lg:col-span-7 ${mobileTab === 'input' ? 'hidden lg:block' : 'block'}`}>
           <div className={`rounded-3xl shadow-sm border h-full flex flex-col overflow-hidden transition-all ${theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
             {/* Tabs */}
             <div className="p-2 overflow-x-auto no-scrollbar">
