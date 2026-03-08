@@ -181,6 +181,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+const sanitizeText = (text: string): string => {
+  if (typeof text !== 'string') return text;
+  return text.replace(/\0/g, '');
+};
+
 async function startServer() {
   await initDb();
   const app = express();
@@ -220,7 +225,7 @@ async function startServer() {
     const { email, password, name } = req.body;
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const info = await db.run("INSERT INTO users (email, password, name) VALUES (?, ?, ?)", [email, hashedPassword, name]);
+      const info = await db.run("INSERT INTO users (email, password, name) VALUES (?, ?, ?)", [sanitizeText(email), hashedPassword, sanitizeText(name)]);
       const user = await db.get("SELECT id, email, name FROM users WHERE id = ?", [info.lastInsertRowid]);
       (req.session as any).userId = user.id;
       res.json(user);
@@ -289,8 +294,10 @@ async function startServer() {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const { cvText, jobDescription, analysis } = req.body;
+    const cleanCvText = sanitizeText(cvText);
+    const cleanJobDescription = sanitizeText(jobDescription);
     await db.run("INSERT INTO cv_history (user_id, cv_text, job_description, analysis_json) VALUES (?, ?, ?, ?)", 
-      [userId, cvText, jobDescription, JSON.stringify(analysis)]);
+      [userId, cleanCvText, cleanJobDescription, sanitizeText(JSON.stringify(analysis))]);
     res.json({ success: true });
   });
 
