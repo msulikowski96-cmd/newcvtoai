@@ -22,9 +22,13 @@ let pgPool: pg.Pool | null = null;
 let sqliteDb: any = null;
 
 if (isPostgres) {
+  const connectionString = process.env.DATABASE_URL!
+    .replace(/sslmode=[^&]+&?/g, '')
+    .replace(/channel_binding=[^&]+&?/g, '')
+    .replace(/[?&]$/, '');
   pgPool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    connectionString,
+    ssl: { rejectUnauthorized: false },
   });
 } else {
   sqliteDb = new Database("database.sqlite");
