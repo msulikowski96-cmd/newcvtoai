@@ -32,7 +32,9 @@ import {
   Sun,
   Languages,
   Search,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
