@@ -303,6 +303,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ theme = 'light', toggl
             <li><strong className={theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'}>Time Saving:</strong> Generate tailored cover letters and suggestions in seconds, not hours.</li>
             <li><strong className={theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'}>Objective Feedback:</strong> Get unbiased scoring on your resume's impact and relevance.</li>
           </ul>
+
+          <h2 className={`mt-16 ${theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}`}>Frequently Asked Questions (FAQ)</h2>
+          
+          <h3 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>How does the AI analyze my CV?</h3>
+          <p className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            Our advanced AI models read your uploaded PDF or pasted text and compare it directly against the job description you provide. It looks for semantic matches, missing hard and soft skills, and evaluates the overall impact of your bullet points. The result is a comprehensive report with an ATS match score and actionable improvement suggestions.
+          </p>
+
+          <h3 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Is my personal data safe?</h3>
+          <p className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            Yes, absolutely. We prioritize your privacy and data security. Your CV data is processed securely and is not used to train public AI models. We do not sell your personal information to third parties. For more details, please review our Privacy Policy.
+          </p>
+
+          <h3 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Can I generate a cover letter?</h3>
+          <p className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            Yes! Once your CV is analyzed against a job description, you can use our Cover Letter Generator. It creates a highly personalized, professional cover letter that highlights your most relevant experience and aligns perfectly with the company's requirements.
+          </p>
+
+          <h3 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>What makes a good ATS-friendly resume?</h3>
+          <p className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            A good ATS-friendly resume uses standard section headings (like "Experience" and "Education"), avoids complex formatting (like tables, columns, or graphics), and includes exact keyword matches from the job description. Our tool helps you identify which keywords you are missing so you can naturally incorporate them into your experience section.
+          </p>
         </div>
       </section>
 

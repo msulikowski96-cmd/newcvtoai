@@ -40,14 +40,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-zinc-200 p-8 space-y-6"
       >
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-zinc-900">
-            {view === 'login' ? 'Welcome Back' : 'Create Account'}
-          </h1>
-          <p className="text-zinc-500 text-sm">
-            {view === 'login' ? 'Sign in to access your saved CVs' : 'Join CvToAI to optimize your career'}
-          </p>
-        </div>
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold text-zinc-900">
+              {view === 'login' ? 'Welcome Back' : 'Create Your Account'}
+            </h1>
+            <p className="text-zinc-600 text-sm max-w-sm mx-auto">
+              {view === 'login' 
+                ? 'Sign in to access your saved CV analyses, generated cover letters, and personalized interview questions. Continue optimizing your career path.' 
+                : 'Join CvToAI to unlock advanced AI tools for your career. Optimize your resume, generate tailored cover letters, and prepare for interviews with precision.'}
+            </p>
+          </div>
 
         <form onSubmit={view === 'login' ? handleLogin : handleRegister} className="space-y-4">
           {view === 'register' && (
