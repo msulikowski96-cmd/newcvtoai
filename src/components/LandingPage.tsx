@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { 
   FileText, 
@@ -9,139 +9,76 @@ import {
   Zap, 
   Users, 
   BarChart3,
-  MessageSquare,
-  Linkedin,
-  BriefcaseBusiness,
-  Star,
-  ChevronDown
+  Moon,
+  Sun
 } from 'lucide-react';
 
 interface LandingPageProps {
+  theme?: 'light' | 'dark';
+  toggleTheme?: () => void;
   onGetStarted: () => void;
   onLogin: () => void;
   onPrivacy: () => void;
   onTerms: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin, onPrivacy, onTerms }) => {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const features = [
-    {
-      icon: BarChart3,
-      title: "Analiza ATS",
-      desc: "Szczegółowy wynik i analiza tego, jak dobrze Twoje CV przechodzi przez systemy ATS.",
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
-    },
-    {
-      icon: Sparkles,
-      title: "Optymalizacja CV",
-      desc: "Konkretne wskazówki do poprawy słów kluczowych, formatowania i opisów osiągnięć.",
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      icon: FileText,
-      title: "Listy Motywacyjne",
-      desc: "Generuj spersonalizowane listy motywacyjne dopasowane do konkretnej oferty pracy.",
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-    },
-    {
-      icon: MessageSquare,
-      title: "Przygotowanie do Rozmowy",
-      desc: "Ćwicz z pytaniami wygenerowanymi przez AI, specyficznymi dla stanowiska.",
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      icon: Linkedin,
-      title: "Audyt LinkedIn",
-      desc: "Zoptymalizuj swój profil LinkedIn, aby przyciągać rekruterów i być spójnym z CV.",
-      color: "text-sky-600",
-      bg: "bg-sky-50",
-    },
-    {
-      icon: BriefcaseBusiness,
-      title: "Znajdź Oferty",
-      desc: "AI przeszukuje Internet i sugeruje aktualne oferty pracy dopasowane do Twojego profilu.",
-      color: "text-rose-600",
-      bg: "bg-rose-50",
-    },
-  ];
-
-  const stats = [
-    { value: "95%", label: "skuteczność przejścia ATS" },
-    { value: "3x", label: "więcej zaproszeń na rozmowy" },
-    { value: "60s", label: "czas analizy CV" },
-    { value: "6", label: "narzędzi w jednym miejscu" },
-  ];
-
-  const faqs = [
-    {
-      q: "Czy moje dane CV są bezpieczne?",
-      a: "Tak. Twoje dane są przetwarzane wyłącznie na potrzeby analizy i nie są udostępniane osobom trzecim ani używane do trenowania modeli AI."
-    },
-    {
-      q: "Czy potrzebuję konta, żeby korzystać z aplikacji?",
-      a: "Nie — możesz korzystać z analizy CV jako gość. Konto daje dostęp do historii analiz i zapisanych preferencji."
-    },
-    {
-      q: "Jaki format CV jest obsługiwany?",
-      a: "Możesz wgrać CV w formacie PDF lub wkleić tekst bezpośrednio. Obsługujemy CV w języku polskim i angielskim."
-    },
-    {
-      q: "Ile to kosztuje?",
-      a: "Aplikacja jest bezpłatna. Wymaga jedynie własnego klucza API Google Gemini (darmowy tier wystarczy do podstawowego użycia)."
-    },
-  ];
-
+export const LandingPage: React.FC<LandingPageProps> = ({ theme = 'light', toggleTheme, onGetStarted, onLogin, onPrivacy, onTerms }) => {
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 overflow-x-hidden">
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100 selection:bg-indigo-500/30' : 'bg-zinc-50 text-zinc-900 selection:bg-indigo-100'}`}>
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-blue-200">
-              <Sparkles size={16} />
+      <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950/80 border-zinc-800/50' : 'bg-white/80 border-zinc-200/50'}`}>
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+              <Sparkles size={20} />
             </div>
             <span className="font-bold text-xl tracking-tight">CvToAI</span>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-4">
+            {toggleTheme && (
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-full transition-colors ${
+                  theme === 'dark' ? 'bg-zinc-900 text-zinc-400 hover:text-zinc-100' : 'bg-zinc-100 text-zinc-500 hover:text-zinc-900'
+                }`}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            )}
             <button 
               onClick={onLogin}
-              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors px-3 py-2 rounded-lg hover:bg-zinc-50"
+              className={`text-sm font-bold transition-colors hidden sm:block ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'}`}
             >
-              Zaloguj
+              Sign In
             </button>
             <button 
               onClick={onGetStarted}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold rounded-full hover:shadow-lg hover:shadow-blue-200 transition-all hover:scale-105 active:scale-95"
+              className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-bold rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
-              Wypróbuj za darmo
+              Get Started
             </button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-28 pb-16 px-4 sm:px-6 overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-60" />
-          <div className="absolute top-20 -left-40 w-80 h-80 bg-indigo-100 rounded-full blur-3xl opacity-40" />
-          <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-purple-100 rounded-full blur-3xl opacity-30" />
+      <section className="pt-32 pb-20 px-6 relative overflow-hidden">
+        {/* Background Gradients */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[500px] opacity-30 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/20 to-transparent blur-3xl rounded-full mix-blend-multiply dark:mix-blend-screen" />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 blur-3xl rounded-full mix-blend-multiply dark:mix-blend-screen" />
         </div>
 
-        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
+        <div className="max-w-4xl mx-auto text-center space-y-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100"
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+              theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+            }`}
           >
-            <Sparkles size={12} />
+            <Sparkles size={14} />
             AI-Powered Career Assistant
           </motion.div>
           
@@ -149,11 +86,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin,
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-zinc-900 leading-[1.1]"
+            className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1]"
           >
-            Zoptymalizuj CV dla{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 block sm:inline">
-              maksymalnego efektu
+            Optimize Your CV for <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-600">
+              Maximum Impact
             </span>
           </motion.h1>
 
@@ -161,309 +98,247 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin,
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg sm:text-xl text-zinc-500 max-w-2xl mx-auto leading-relaxed"
+            className={`text-xl max-w-2xl mx-auto leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}
           >
-            Przestań być odrzucany przez systemy ATS. AI analizuje Twoje CV i dopasowuje je do konkretnej oferty pracy — w 60 sekund.
+            Stop getting rejected by ATS bots. Our AI analyzes your resume against job descriptions to help you land more interviews.
           </motion.p>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
           >
             <button 
               onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold text-base sm:text-lg hover:shadow-xl hover:shadow-blue-200 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group"
+              className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full font-bold text-lg shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 group"
             >
-              Analizuj moje CV
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              Analyze My CV Free
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
               onClick={onLogin}
-              className="w-full sm:w-auto px-8 py-4 bg-white text-zinc-900 border border-zinc-200 rounded-full font-bold text-base sm:text-lg hover:bg-zinc-50 hover:border-zinc-300 transition-all"
+              className={`px-8 py-4 rounded-full font-bold text-lg transition-all hover:scale-[1.02] active:scale-[0.98] border ${
+                theme === 'dark' 
+                  ? 'bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800' 
+                  : 'bg-white border-zinc-200 text-zinc-900 hover:bg-zinc-50 shadow-sm'
+              }`}
             >
-              Zaloguj się
+              View Demo
             </button>
           </motion.div>
 
-          {/* Social proof stars */}
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="flex items-center justify-center gap-1 pt-2"
+            transition={{ duration: 1, delay: 0.5 }}
+            className="pt-12 flex items-center justify-center gap-8 text-zinc-400 grayscale opacity-60"
           >
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={16} className="text-amber-400 fill-amber-400" />
-            ))}
-            <span className="text-sm text-zinc-500 ml-2">Oceniane 5/5 przez użytkowników</span>
+            {/* Placeholder logos for social proof */}
+            <div className="flex items-center gap-2 font-bold text-xl"><Shield size={24} /> Secure</div>
+            <div className="flex items-center gap-2 font-bold text-xl"><Zap size={24} /> Fast</div>
+            <div className="flex items-center gap-2 font-bold text-xl"><Users size={24} /> Trusted</div>
           </motion.div>
-        </div>
-
-        {/* Mock UI preview card */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-          className="relative z-10 max-w-3xl mx-auto mt-14 px-2"
-        >
-          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl shadow-zinc-200 border border-zinc-100 overflow-hidden">
-            {/* Mock header bar */}
-            <div className="bg-zinc-50 border-b border-zinc-100 px-4 py-3 flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-300" />
-                <div className="w-3 h-3 rounded-full bg-amber-300" />
-                <div className="w-3 h-3 rounded-full bg-green-300" />
-              </div>
-              <div className="flex-1 mx-4 h-6 bg-white rounded-lg border border-zinc-200 flex items-center px-3">
-                <span className="text-xs text-zinc-400">cvtoai.app</span>
-              </div>
-            </div>
-            {/* Mock content */}
-            <div className="p-4 sm:p-6 grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="h-3 w-24 bg-zinc-100 rounded-full" />
-                <div className="h-24 bg-zinc-50 rounded-xl border border-zinc-100" />
-                <div className="h-3 w-20 bg-zinc-100 rounded-full" />
-                <div className="h-24 bg-zinc-50 rounded-xl border border-zinc-100" />
-                <div className="h-11 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl" />
-              </div>
-              <div className="space-y-3">
-                <div className="h-3 w-20 bg-zinc-100 rounded-full" />
-                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-4 space-y-3">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-zinc-900">87</span>
-                    <span className="text-zinc-400 font-bold">%</span>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold">
-                    <CheckCircle2 size={12} /> Świetny wynik
-                  </div>
-                  {['Formatowanie', 'Słowa kluczowe', 'Dopasowanie'].map((label, i) => (
-                    <div key={i} className="space-y-1">
-                      <div className="flex justify-between text-xs text-zinc-500">
-                        <span>{label}</span>
-                        <span>{[16, 14, 18][i]}/20</span>
-                      </div>
-                      <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500`} style={{ width: `${[80, 70, 90][i]}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-12 px-4 sm:px-6 bg-zinc-900">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
-          {stats.map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center"
-            >
-              <div className="text-3xl sm:text-4xl font-black text-white mb-1">{stat.value}</div>
-              <div className="text-xs sm:text-sm text-zinc-400 font-medium">{stat.label}</div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 sm:py-24 bg-zinc-50 border-t border-zinc-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100 mb-4">
-              Funkcje
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 mb-4">Wszystko, czego potrzebujesz, żeby dostać pracę</h2>
-            <p className="text-zinc-500 text-base sm:text-lg">
-              Kompleksowe narzędzia AI do optymalizacji każdego etapu procesu rekrutacyjnego.
+      <section className={`py-24 border-t transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950/50 border-zinc-800/50' : 'bg-zinc-50 border-zinc-200'}`}>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-bold mb-4">Everything you need to get hired</h2>
+            <p className={`text-lg ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>
+              Comprehensive tools to optimize every stage of your job application process.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {features.map((feature, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-white p-6 sm:p-8 rounded-2xl border border-zinc-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
-              >
-                <div className={`w-12 h-12 ${feature.bg} ${feature.color} rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                  <feature.icon size={22} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: BarChart3,
+                title: "ATS Analysis",
+                desc: "Get a detailed score and breakdown of how well your CV parses in Applicant Tracking Systems."
+              },
+              {
+                icon: FileText,
+                title: "Smart Optimization",
+                desc: "Receive actionable suggestions to improve keywords, formatting, and impact statements."
+              },
+              {
+                icon: FileText,
+                title: "Cover Letters",
+                desc: "Generate tailored cover letters that match your tone and the specific job requirements."
+              },
+              {
+                icon: Users,
+                title: "Interview Prep",
+                desc: "Practice with AI-generated interview questions specific to the role you're applying for."
+              },
+              {
+                icon: Zap,
+                title: "LinkedIn Audit",
+                desc: "Optimize your LinkedIn profile to attract recruiters and align with your resume."
+              },
+              {
+                icon: Shield,
+                title: "Data Privacy",
+                desc: "Your data is secure. We don't share your personal information with third parties."
+              }
+            ].map((feature, i) => (
+              <div key={i} className={`p-8 rounded-3xl border transition-all hover:scale-[1.02] ${
+                theme === 'dark' 
+                  ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' 
+                  : 'bg-white border-zinc-200 hover:border-zinc-300 shadow-sm hover:shadow-md'
+              }`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 ${
+                  theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
+                }`}>
+                  <feature.icon size={24} />
                 </div>
-                <h3 className="text-lg font-bold text-zinc-900 mb-2">{feature.title}</h3>
-                <p className="text-zinc-500 text-sm leading-relaxed">{feature.desc}</p>
-              </motion.div>
+                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                <p className={`leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                  {feature.desc}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* How it Works */}
-      <section className="py-20 sm:py-24 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-zinc-900">
-              Jak to działa?
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 relative">
-            {/* Connection line (desktop only) */}
-            <div className="hidden sm:block absolute top-8 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-0.5 bg-gradient-to-r from-blue-200 via-indigo-200 to-purple-200" />
-            {[
-              { step: "01", title: "Wgraj CV", desc: "Wgraj CV w formacie PDF lub wklej tekst bezpośrednio.", color: "bg-blue-600" },
-              { step: "02", title: "Dodaj ofertę pracy", desc: "Wklej opis stanowiska, na które aplikujesz.", color: "bg-indigo-600" },
-              { step: "03", title: "Otrzymaj feedback", desc: "AI analizuje luki, słowa kluczowe i problemy z formatowaniem w sekundy.", color: "bg-purple-600" },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                className="flex flex-col items-center text-center relative"
-              >
-                <div className={`w-16 h-16 ${item.color} text-white rounded-2xl flex items-center justify-center text-xl font-black shadow-lg mb-5 relative z-10`}>
-                  {item.step}
-                </div>
-                <h3 className="text-lg font-bold text-zinc-900 mb-2">{item.title}</h3>
-                <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-20 sm:py-24 bg-zinc-50 border-t border-zinc-200 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Często zadawane pytania</h2>
-          </div>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-white border border-zinc-200 rounded-2xl overflow-hidden"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 sm:p-6 text-left"
-                >
-                  <span className="font-semibold text-zinc-900 text-sm sm:text-base pr-4">{faq.q}</span>
-                  <ChevronDown 
-                    size={18} 
-                    className={`text-zinc-400 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} 
-                  />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-zinc-500 leading-relaxed border-t border-zinc-100 pt-4">
-                    {faq.a}
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 sm:py-24 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 sm:p-14 text-center overflow-hidden shadow-2xl shadow-blue-200"
-          >
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-            </div>
-            <div className="relative z-10">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-                Gotowy na lepszą pracę?
+      <section className="py-24 px-6 relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-8">
+                How CvToAI works
               </h2>
-              <p className="text-blue-100 text-base sm:text-lg mb-8 max-w-xl mx-auto">
-                Zacznij analizować CV za darmo. Bez konta, bez opłat.
-              </p>
-              <button
-                onClick={onGetStarted}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-700 rounded-full font-bold text-base sm:text-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 group"
-              >
-                Analizuj CV teraz
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
+              <div className="space-y-10">
+                {[
+                  {
+                    step: "01",
+                    title: "Upload your CV",
+                    desc: "Upload your existing resume in PDF format or paste the text directly."
+                  },
+                  {
+                    step: "02",
+                    title: "Add Job Description",
+                    desc: "Paste the job description of the role you're targeting for precise matching."
+                  },
+                  {
+                    step: "03",
+                    title: "Get Instant Feedback",
+                    desc: "Our AI analyzes gaps, keywords, and formatting issues in seconds."
+                  }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-6 group">
+                    <div className={`text-2xl font-bold font-mono transition-colors ${
+                      theme === 'dark' ? 'text-indigo-500/30 group-hover:text-indigo-400' : 'text-indigo-200 group-hover:text-indigo-500'
+                    }`}>{item.step}</div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                      <p className={`leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </motion.div>
+            <div className={`rounded-[2.5rem] p-8 aspect-square flex items-center justify-center relative overflow-hidden border ${
+              theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200'
+            }`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10" />
+              {/* Abstract UI representation */}
+              <div className={`w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-4 relative z-10 border ${
+                theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'
+              }`}>
+                <div className={`h-4 w-1/3 rounded ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                <div className="space-y-2">
+                  <div className={`h-2 w-full rounded ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                  <div className={`h-2 w-5/6 rounded ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                  <div className={`h-2 w-4/6 rounded ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <div className="h-8 w-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg" />
+                  <div className={`h-8 w-20 rounded-lg ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                </div>
+                
+                {/* Floating badge */}
+                <div className={`absolute -right-4 -bottom-4 p-4 rounded-2xl shadow-xl border flex items-center gap-3 ${
+                  theme === 'dark' ? 'bg-zinc-900 border-zinc-800 shadow-black/50' : 'bg-white border-zinc-100'
+                }`}>
+                  <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500">
+                    <CheckCircle2 size={20} />
+                  </div>
+                  <div>
+                    <div className={`text-xs uppercase font-bold tracking-wider ${theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'}`}>Match Score</div>
+                    <div className="text-xl font-black">92%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* SEO Text */}
-      <section className="py-12 bg-white border-t border-zinc-100 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto prose prose-zinc prose-sm sm:prose-base">
-          <h2>Dlaczego optymalizacja CV ma znaczenie?</h2>
-          <p>
-            Większość firm używa systemów ATS (Applicant Tracking Systems) do filtrowania CV przed dotarciem do rekrutera. 
-            Jeśli Twoje CV nie jest zoptymalizowane, ryzykujesz odrzucenie niezależnie od kwalifikacji.
+      {/* Content for AdSense (SEO Text) */}
+      <section className={`py-24 border-t transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-zinc-950 border-zinc-800/50' : 'bg-white border-zinc-100'
+      }`}>
+        <div className={`max-w-4xl mx-auto px-6 prose prose-lg ${
+          theme === 'dark' ? 'prose-invert prose-zinc' : 'prose-zinc'
+        }`}>
+          <h2 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Why CV Optimization Matters</h2>
+          <p className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            In today's competitive job market, most companies use Applicant Tracking Systems (ATS) to filter resumes before they ever reach a human recruiter. 
+            If your CV isn't optimized for these systems, you risk rejection regardless of your qualifications.
           </p>
-          <h3>Kluczowe korzyści z użycia CvToAI</h3>
-          <ul>
-            <li><strong>Dopasowanie słów kluczowych:</strong> Upewnij się, że CV mówi tym samym językiem co oferta pracy.</li>
-            <li><strong>Zgodność formatowania:</strong> Unikaj błędów parsowania dzięki układom przyjaznym ATS.</li>
-            <li><strong>Oszczędność czasu:</strong> Generuj spersonalizowane listy motywacyjne w sekundy.</li>
-            <li><strong>Obiektywny feedback:</strong> Otrzymaj bezstronny wynik trafności i wpływu Twojego CV.</li>
+          <p className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            CvToAI helps you bridge the gap between your skills and the recruiter's requirements. By analyzing your resume against specific job descriptions, 
+            we identify missing keywords, formatting errors, and structural issues that could be holding you back.
+          </p>
+          <h3 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Key Benefits of Using an AI Resume Builder</h3>
+          <ul className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600'}>
+            <li><strong className={theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'}>Keyword Matching:</strong> Ensure your resume speaks the same language as the job description.</li>
+            <li><strong className={theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'}>Format Compliance:</strong> Avoid parsing errors with ATS-friendly layouts.</li>
+            <li><strong className={theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'}>Time Saving:</strong> Generate tailored cover letters and suggestions in seconds, not hours.</li>
+            <li><strong className={theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'}>Objective Feedback:</strong> Get unbiased scoring on your resume's impact and relevance.</li>
           </ul>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-zinc-900 text-zinc-400 py-10 sm:py-12 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-8 mb-8">
-          <div className="col-span-2 sm:col-span-2">
-            <div className="flex items-center gap-2 text-white mb-3">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Sparkles size={14} />
+      <footer className="bg-zinc-950 text-zinc-400 py-16 px-6 border-t border-zinc-900">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="col-span-1 md:col-span-2">
+            <div className="flex items-center gap-3 text-white mb-6">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
+                <Sparkles size={16} />
               </div>
-              <span className="font-bold text-lg">CvToAI</span>
+              <span className="font-bold text-xl tracking-tight">CvToAI</span>
             </div>
-            <p className="max-w-xs text-sm leading-relaxed">
-              Pomagamy kandydatom zdobywać wymarzone prace dzięki narzędziom AI.
+            <p className="max-w-xs text-sm leading-relaxed text-zinc-500">
+              Empowering job seekers with AI-driven tools to land their dream jobs. 
+              Optimize your CV, prepare for interviews, and succeed.
             </p>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-3 text-sm">Produkt</h4>
-            <ul className="space-y-2 text-sm">
-              <li><button onClick={onGetStarted} className="hover:text-white transition-colors">Analiza CV</button></li>
-              <li><button onClick={onGetStarted} className="hover:text-white transition-colors">List motywacyjny</button></li>
-              <li><button onClick={onGetStarted} className="hover:text-white transition-colors">Przygotowanie</button></li>
+            <h4 className="text-white font-bold mb-6 tracking-wide">Product</h4>
+            <ul className="space-y-3 text-sm font-medium">
+              <li><button onClick={onGetStarted} className="hover:text-indigo-400 transition-colors">CV Analysis</button></li>
+              <li><button onClick={onGetStarted} className="hover:text-indigo-400 transition-colors">Cover Letter Generator</button></li>
+              <li><button onClick={onGetStarted} className="hover:text-indigo-400 transition-colors">Interview Prep</button></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-3 text-sm">Prawne</h4>
-            <ul className="space-y-2 text-sm">
-              <li><button onClick={onPrivacy} className="hover:text-white transition-colors">Polityka prywatności</button></li>
-              <li><button onClick={onTerms} className="hover:text-white transition-colors">Warunki usługi</button></li>
+            <h4 className="text-white font-bold mb-6 tracking-wide">Legal</h4>
+            <ul className="space-y-3 text-sm font-medium">
+              <li><button onClick={onPrivacy} className="hover:text-indigo-400 transition-colors">Privacy Policy</button></li>
+              <li><button onClick={onTerms} className="hover:text-indigo-400 transition-colors">Terms of Service</button></li>
             </ul>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto pt-6 border-t border-zinc-800 text-xs text-center">
-          &copy; {new Date().getFullYear()} CvToAI. Wszelkie prawa zastrzeżone.
+        <div className="max-w-7xl mx-auto pt-8 border-t border-zinc-900 text-xs font-medium text-center md:text-left text-zinc-600">
+          &copy; {new Date().getFullYear()} CvToAI. All rights reserved.
         </div>
       </footer>
     </div>

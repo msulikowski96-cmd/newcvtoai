@@ -10,6 +10,8 @@ import multer from "multer";
 import fs from "fs";
 import pg from "pg";
 import dotenv from "dotenv";
+import { OAuth2Client } from "google-auth-library";
+import axios from "axios";
 
 dotenv.config();
 
@@ -22,13 +24,9 @@ let pgPool: pg.Pool | null = null;
 let sqliteDb: any = null;
 
 if (isPostgres) {
-  const connectionString = process.env.DATABASE_URL!
-    .replace(/sslmode=[^&]+&?/g, '')
-    .replace(/channel_binding=[^&]+&?/g, '')
-    .replace(/[?&]$/, '');
   pgPool = new pg.Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
   });
 } else {
   sqliteDb = new Database("database.sqlite");
@@ -185,15 +183,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-const sanitizeText = (text: string): string => {
-  if (typeof text !== 'string') return text;
-  return text.replace(/\0/g, '');
-};
-
 async function startServer() {
   await initDb();
   const app = express();
-  const PORT = Number(process.env.PORT) || 5000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
   
@@ -214,8 +207,8 @@ async function startServer() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true, // Required for SameSite=None
+        sameSite: "none", // Required for cross-origin iframe
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
       },
     })
@@ -229,7 +222,7 @@ async function startServer() {
     const { email, password, name } = req.body;
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const info = await db.run("INSERT INTO users (email, password, name) VALUES (?, ?, ?)", [sanitizeText(email), hashedPassword, sanitizeText(name)]);
+      const info = await db.run("INSERT INTO users (email, password, name) VALUES (?, ?, ?)", [email, hashedPassword, name]);
       const user = await db.get("SELECT id, email, name FROM users WHERE id = ?", [info.lastInsertRowid]);
       (req.session as any).userId = user.id;
       res.json(user);
@@ -270,6 +263,82 @@ async function startServer() {
     });
   });
 
+  // Google OAuth Routes
+  const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+
+  app.get("/api/auth/google/url", (req, res) => {
+    const redirectUri = req.query.redirect_uri as string;
+    if (!redirectUri) return res.status(400).json({ error: "Missing redirect_uri" });
+
+    const url = googleClient.generateAuthUrl({
+      access_type: "offline",
+      scope: [
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.email",
+      ],
+      redirect_uri: redirectUri,
+    });
+    res.json({ url });
+  });
+
+  app.get("/auth/google/callback", async (req, res) => {
+    const { code, state } = req.query;
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    const redirectUri = `${baseUrl}/auth/google/callback`;
+
+    try {
+      const { tokens } = await googleClient.getToken({
+        code: code as string,
+        redirect_uri: redirectUri,
+      });
+      googleClient.setCredentials(tokens);
+
+      const userInfo = await axios.get(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+      );
+
+      const { email, name, picture, sub: googleId } = userInfo.data;
+
+      // Find or create user
+      let user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
+      if (!user) {
+        const info = await db.run(
+          "INSERT INTO users (email, name, avatar) VALUES (?, ?, ?)",
+          [email, name, picture]
+        );
+        user = await db.get("SELECT * FROM users WHERE id = ?", [info.lastInsertRowid]);
+      } else if (!user.avatar && picture) {
+        await db.run("UPDATE users SET avatar = ? WHERE id = ?", [picture, user.id]);
+        user.avatar = picture;
+      }
+
+      (req.session as any).userId = user.id;
+
+      res.send(`
+        <html>
+          <body>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                window.close();
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+            <p>Authentication successful. This window should close automatically.</p>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Google OAuth error:", error);
+      res.status(500).send("Authentication failed");
+    }
+  });
+
   // Profile Routes
   app.post("/api/profile/update", async (req, res) => {
     const userId = (req.session as any).userId;
@@ -298,10 +367,8 @@ async function startServer() {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const { cvText, jobDescription, analysis } = req.body;
-    const cleanCvText = sanitizeText(cvText);
-    const cleanJobDescription = sanitizeText(jobDescription);
     await db.run("INSERT INTO cv_history (user_id, cv_text, job_description, analysis_json) VALUES (?, ?, ?, ?)", 
-      [userId, cleanCvText, cleanJobDescription, sanitizeText(JSON.stringify(analysis))]);
+      [userId, cvText, jobDescription, JSON.stringify(analysis)]);
     res.json({ success: true });
   });
 
