@@ -55,7 +55,7 @@ Twoja misja: Stworzyć CV które przejdzie przez ATS i zachwyci rekruterów. Odp
 export const analyzeCV = async (cvText: string, jobDescription: string, lang: string = 'pl', userPreferences?: User['preferences']): Promise<CVAnalysis> => {
   const ai = getAI();
   const prompt = `
-    🎯 ZADANIE: Przeprowadź PROFESJONALNĄ ANALIZĘ JAKOŚCI CV i wygeneruj ZOPTYMALIZOWANĄ TREŚĆ w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
+    🎯 ZADANIE: Przeprowadź SZCZEGÓŁOWĄ ANALIZĘ DOPASOWANIA CV do oferty pracy i wygeneruj ZOPTYMALIZOWANĄ TREŚĆ w języku ${lang === 'pl' ? 'polskim' : 'angielskim'}.
     
     📋 DANE WEJŚCIOWE:
     • CV kandydata:
@@ -71,6 +71,11 @@ export const analyzeCV = async (cvText: string, jobDescription: string, lang: st
     - Ton podsumowania: ${userPreferences.summary_tone || 'profesjonalny'}
     - Preferowane sekcje: ${userPreferences.preferred_sections?.join(', ') || 'Brak'}
     ` : ''}
+
+    🔍 TWOJA ANALIZA POWINNA ZAWIERAĆ:
+    1. MOCNE STRONY (strengths): Wskaż konkretne umiejętności i doświadczenia kandydata, które idealnie pasują do wymagań oferty.
+    2. OBSZARY NIEDOPASOWANIA (weaknesses): Wskaż luki kompetencyjne lub brakujące doświadczenie w porównaniu z ofertą.
+    3. SUGESTIE POPRAWY (suggestions): Podaj konkretne wskazówki, jak kandydat może zmodyfikować swoje CV (np. dodać słowa kluczowe, zmienić opisy), aby lepiej odpowiadało tej konkretnej ofercie.
 
     🔍 KRYTERIA OCENY (każde 0-20 punktów):
     W każdej sekcji podaj SZCZEGÓŁOWY FEEDBACK (w polu 'feedback'), odwołując się do konkretnych fragmentów CV i opisu stanowiska. Wyjaśnij dokładnie, dlaczego przyznano taką ocenę.

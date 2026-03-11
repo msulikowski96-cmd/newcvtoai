@@ -39,6 +39,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import * as pdfjs from 'pdfjs-dist';
+// @ts-ignore
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { 
   analyzeCV, 
   generateCoverLetter, 
@@ -66,9 +68,9 @@ import { useProfile } from './hooks/useProfile';
 import { useCV } from './hooks/useCV';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
-type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
+type Tab = 'match' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
 type View = 'app' | 'login' | 'register' | 'profile' | 'landing' | 'privacy' | 'terms';
 
 declare global {
@@ -507,8 +509,8 @@ export default function App() {
               disabled={isLoading || !cvText || !jobDescription}
               className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none flex items-center justify-center gap-3 transition-all duration-300"
             >
-              {isLoading && activeTab === 'analyze' ? <Loader2 className="animate-spin" size={24} /> : <Sparkles size={24} />}
-              {isLoading && activeTab === 'analyze' ? 'Analyzing...' : 'Analyze & Optimize'}
+              {isLoading && activeTab === 'match' ? <Loader2 className="animate-spin" size={24} /> : <Sparkles size={24} />}
+              {isLoading && activeTab === 'match' ? 'Analyzing...' : 'Match Analysis'}
             </button>
             
             <div className="grid grid-cols-2 gap-4">
@@ -586,17 +588,17 @@ export default function App() {
             {/* Tabs */}
             <div className="p-2 overflow-x-auto no-scrollbar">
               <div className={`flex p-1 rounded-2xl ${theme === 'dark' ? 'bg-zinc-950/50' : 'bg-zinc-100/80'}`}>
-                {(['analyze', 'cover-letter', 'interview', 'roadmap', 'linkedin', 'jobs'] as Tab[]).map((tab) => (
+                {(['match', 'cover-letter', 'interview', 'roadmap', 'linkedin', 'jobs'] as Tab[]).map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => setActiveTab(tab as any)}
                     className={`flex-none px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-xl transition-all relative z-10 ${
                       activeTab === tab 
                         ? (theme === 'dark' ? 'text-white' : 'text-zinc-900') 
                         : (theme === 'dark' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')
                     }`}
                   >
-                    {tab.replace('-', ' ')}
+                    {tab === 'match' ? 'Match Analysis' : tab.replace('-', ' ')}
                     {activeTab === tab && (
                       <motion.div
                         layoutId="activeTab"
@@ -612,7 +614,7 @@ export default function App() {
             {/* Content Area */}
             <div className="flex-1 p-6 overflow-y-auto">
               <AnimatePresence mode="wait">
-                {activeTab === 'analyze' && (
+                {activeTab === 'match' && (
                   <AnalyzeTab 
                     analysis={analysis} 
                     theme={theme} 

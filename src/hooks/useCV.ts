@@ -3,12 +3,12 @@ import { CVAnalysis, SkillsGap, LinkedInOptimization, User } from '../types';
 import { analyzeCV, generateCoverLetter, generateInterviewQuestions, analyzeSkillsGap, optimizeLinkedIn, findJobOffers, JobOffer } from '../services/gemini';
 import * as pdfjs from 'pdfjs-dist';
 
-export type Tab = 'analyze' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
+export type Tab = 'match' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
 
 export function useCV(user: User | null, hasKey: boolean | null, setHasKey: React.Dispatch<React.SetStateAction<boolean | null>>, language: 'pl' | 'en') {
   const [cvText, setCvText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [activeTab, setActiveTab] = useState<Tab>('analyze');
+  const [activeTab, setActiveTab] = useState<Tab>('match');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -32,29 +32,61 @@ export function useCV(user: User | null, hasKey: boolean | null, setHasKey: Reac
     }
 
     setIsExtracting(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        if (!arrayBuffer) throw new Error("Failed to read file content");
+        
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Basic check for PDF header to catch corruption early
+        const header = String.fromCharCode(...uint8Array.slice(0, 5));
+        if (header !== '%PDF-') {
+          console.error('Invalid PDF header:', header);
+          throw new Error("File does not appear to be a valid PDF (missing %PDF- header). The file might be corrupted.");
+        }
+
+        const loadingTask = pdfjs.getDocument({ 
+          data: uint8Array,
+          // Add CMaps for better character support in some PDFs
+          cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+          cMapPacked: true,
+          // Disable streaming/auto-fetch to prevent structure errors in some environments
+          disableAutoFetch: true,
+          disableStream: true,
+        });
+        
+        const pdf = await loadingTask.promise;
+        
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(' ');
+          fullText += pageText + '\n';
+        }
+        
+        setCvText(fullText.trim());
+      } catch (error: any) {
+        console.error('Detailed PDF extraction error:', error);
+        const errorMessage = error?.message || 'Unknown error';
+        alert(`Failed to extract text from PDF: ${errorMessage}. Please try pasting the text manually.`);
+      } finally {
+        setIsExtracting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
-      
-      setCvText(fullText.trim());
-    } catch (error) {
-      console.error('Error extracting PDF text:', error);
-      alert('Failed to extract text from PDF. Please try pasting the text manually.');
-    } finally {
+    };
+    
+    reader.onerror = () => {
+      alert("Error reading file from disk.");
       setIsExtracting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    };
+    
+    reader.readAsArrayBuffer(file);
   };
 
   const handleAnalyze = async (saveToHistory: (analysis: CVAnalysis) => void) => {
@@ -75,7 +107,7 @@ export function useCV(user: User | null, hasKey: boolean | null, setHasKey: Reac
     try {
       const result = await analyzeCV(cvText, jobDescription, language, user?.preferences);
       setAnalysis(result);
-      setActiveTab('analyze');
+      setActiveTab('match');
       if (user) saveToHistory(result);
     } catch (error) {
       console.error('Analysis error:', error);

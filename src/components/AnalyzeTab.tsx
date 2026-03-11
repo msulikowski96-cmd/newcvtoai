@@ -22,7 +22,7 @@ export const AnalyzeTab: React.FC<AnalyzeTabProps> = ({ analysis, theme, copyToC
       >
         <Sparkles size={48} className="mb-4 opacity-20" />
         <p className="text-lg font-medium">No analysis yet</p>
-        <p className="text-sm">Enter your CV and job description to get started</p>
+        <p className="text-sm">Enter your CV and job description to get a Match Analysis</p>
       </motion.div>
     );
   }
@@ -143,7 +143,7 @@ export const AnalyzeTab: React.FC<AnalyzeTabProps> = ({ analysis, theme, copyToC
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-amber-500 font-bold text-lg">
             <AlertCircle size={20} />
-            <h4>Areas for Improvement</h4>
+            <h4>Areas of Mismatch</h4>
           </div>
           <ul className="space-y-3">
             {analysis.weaknesses.map((w, i) => (
@@ -168,7 +168,7 @@ export const AnalyzeTab: React.FC<AnalyzeTabProps> = ({ analysis, theme, copyToC
           <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-yellow-400' : 'bg-yellow-50 text-yellow-600'}`}>
             <Lightbulb size={20} />
           </div>
-          <h4 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Actionable Suggestions</h4>
+          <h4 className={theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900'}>Improvement Suggestions</h4>
         </div>
         <div className="grid grid-cols-1 gap-3">
           {analysis.suggestions.map((s, i) => (
