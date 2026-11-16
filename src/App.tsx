@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { 
   FileText, 
   Briefcase, 
@@ -38,25 +38,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
-import * as pdfjs from 'pdfjs-dist';
-// @ts-ignore
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-import { 
-  analyzeCV, 
-  generateCoverLetter, 
-  generateInterviewQuestions, 
-  analyzeSkillsGap,
-  optimizeLinkedIn,
-  findJobOffers,
-  JobOffer
-} from './services/gemini';
 import { User, CVAnalysis, SkillsGap, LinkedInOptimization, CVHistoryItem } from './types';
-import { PromoAnimation } from './components/PromoAnimation';
-import { LandingPage } from './components/LandingPage';
-import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { TermsOfService } from './components/TermsOfService';
 import { AuthForm } from './components/AuthForm';
-import { Profile } from './components/Profile';
 import { AnalyzeTab } from './components/AnalyzeTab';
 import { CoverLetterTab } from './components/CoverLetterTab';
 import { InterviewPrepTab } from './components/InterviewPrepTab';
@@ -65,25 +48,22 @@ import { LinkedInTab } from './components/LinkedInTab';
 import { JobsTab } from './components/JobsTab';
 import { useAuth } from './hooks/useAuth';
 import { useProfile } from './hooks/useProfile';
-import { useCV } from './hooks/useCV';
+import { useCV, Tab } from './hooks/useCV';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+// Code-split views that are not needed on first render.
+const LandingPage = lazy(() => import('./components/LandingPage').then(m => ({ default: m.LandingPage })));
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import('./components/TermsOfService').then(m => ({ default: m.TermsOfService })));
+const Profile = lazy(() => import('./components/Profile').then(m => ({ default: m.Profile })));
+const PromoAnimation = lazy(() => import('./components/PromoAnimation').then(m => ({ default: m.PromoAnimation })));
 
-type Tab = 'match' | 'cover-letter' | 'interview' | 'roadmap' | 'linkedin' | 'jobs';
-type View = 'app' | 'login' | 'register' | 'profile' | 'landing' | 'privacy' | 'terms';
-
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <Loader2 className="animate-spin text-zinc-400" size={40} />
+  </div>
+);
 
 export default function App() {
-  const [hasKey, setHasKey] = useState<boolean | null>(null);
   const [history, setHistory] = useState<CVHistoryItem[]>([]);
   const [language, setLanguage] = useState<'pl' | 'en'>('pl');
   const [showPromo, setShowPromo] = useState(false);
@@ -119,25 +99,13 @@ export default function App() {
     fileInputRef, handleFileUpload, handleAnalyze, handleGenerateCoverLetter,
     handleGenerateInterview, handleGenerateRoadmap, handleOptimizeLinkedIn, handleFindJobs,
     copyToClipboard
-  } = useCV(user, hasKey, setHasKey, language);
+  } = useCV(user, language);
 
   const isLoading = isAuthLoading || isProfileLoading || isCVLoading;
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const init = async () => {
-      // Check API Key
-      if (window.aistudio) {
-        const selected = await window.aistudio.hasSelectedApiKey();
-        setHasKey(selected);
-      } else {
-        setHasKey(true);
-      }
-
-      // Check Auth
-      await checkAuth();
-    };
-    init();
+    checkAuth();
   }, []);
 
   const fetchHistory = async () => {
@@ -183,103 +151,34 @@ export default function App() {
     }
   };
 
-  const handleSelectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setHasKey(true); // Assume success as per guidelines
-    }
-  };
-
   if (view === 'landing') {
     return (
-      <LandingPage 
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onGetStarted={() => setView('app')}
-        onLogin={() => setView('login')}
-        onPrivacy={() => setView('privacy')}
-        onTerms={() => setView('terms')}
-      />
+      <Suspense fallback={<PageLoader />}>
+        <LandingPage 
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onGetStarted={() => setView('app')}
+          onLogin={() => setView('login')}
+          onPrivacy={() => setView('privacy')}
+          onTerms={() => setView('terms')}
+        />
+      </Suspense>
     );
   }
 
   if (view === 'privacy') {
-    return <PrivacyPolicy theme={theme} toggleTheme={toggleTheme} onBack={() => setView('landing')} />;
-  }
-
-  if (view === 'terms') {
-    return <TermsOfService theme={theme} toggleTheme={toggleTheme} onBack={() => setView('landing')} />;
-  }
-
-  if (hasKey === false) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-2xl w-full bg-white rounded-3xl shadow-xl border border-zinc-200 p-8 text-center space-y-6"
-        >
-          <div className="w-20 h-20 bg-zinc-900 rounded-2xl flex items-center justify-center text-white mx-auto">
-            <Key size={40} />
-          </div>
-          <div className="space-y-4">
-            <h1 className="text-3xl font-bold text-zinc-900">Connect Your Gemini API Key</h1>
-            <p className="text-zinc-600 text-lg max-w-xl mx-auto">
-              To unlock the full potential of CvToAI and use the advanced Gemini 3.1 Pro model, you need to connect your own API key. This ensures you get the highest quality CV analysis, personalized cover letters, and tailored interview questions.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-8">
-            <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100 space-y-3">
-              <h3 className="font-bold text-zinc-900 flex items-center gap-2">
-                <Shield size={18} className="text-indigo-600" />
-                Secure & Private
-              </h3>
-              <p className="text-sm text-zinc-600">Your API key is used locally in your browser session to communicate directly with Google's servers. We do not store your key on our servers.</p>
-            </div>
-            <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100 space-y-3">
-              <h3 className="font-bold text-zinc-900 flex items-center gap-2">
-                <Sparkles size={18} className="text-indigo-600" />
-                Advanced Features
-              </h3>
-              <p className="text-sm text-zinc-600">By using your own key, you bypass public rate limits and gain access to the most powerful reasoning capabilities for your career advancement.</p>
-            </div>
-          </div>
-
-          <div className="bg-indigo-50/50 p-6 rounded-2xl text-sm text-zinc-700 text-left space-y-3 border border-indigo-100/50 mt-6">
-            <p className="font-semibold text-indigo-900">How to get your key:</p>
-            <ol className="list-decimal pl-5 space-y-1 text-indigo-800/80">
-              <li>Go to Google AI Studio.</li>
-              <li>Create or select a paid Google Cloud project.</li>
-              <li>Generate a new API key.</li>
-            </ol>
-            <a 
-              href="https://ai.google.dev/gemini-api/docs/billing" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-indigo-600 hover:text-indigo-700 underline font-medium inline-flex items-center gap-1 mt-2"
-            >
-              Learn more about billing <ArrowRight size={14} />
-            </a>
-          </div>
-
-          <button
-            onClick={handleSelectKey}
-            className="w-full py-4 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 mt-8 text-lg shadow-lg shadow-zinc-900/20"
-          >
-            <Key size={20} />
-            Select API Key to Continue
-          </button>
-        </motion.div>
-      </div>
+      <Suspense fallback={<PageLoader />}>
+        <PrivacyPolicy theme={theme} toggleTheme={toggleTheme} onBack={() => setView('landing')} />
+      </Suspense>
     );
   }
 
-  if (hasKey === null) {
+  if (view === 'terms') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-zinc-400" size={40} />
-      </div>
+      <Suspense fallback={<PageLoader />}>
+        <TermsOfService theme={theme} toggleTheme={toggleTheme} onBack={() => setView('landing')} />
+      </Suspense>
     );
   }
 
@@ -305,6 +204,7 @@ export default function App() {
 
   if (view === 'profile' && user) {
     return (
+      <Suspense fallback={<PageLoader />}>
       <Profile
         user={user}
         theme={theme}
@@ -341,12 +241,17 @@ export default function App() {
         isLoading={isLoading}
         handleLogout={handleLogout}
       />
+      </Suspense>
     );
   }
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors duration-300 ${theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}>
-      {showPromo && <PromoAnimation onClose={() => setShowPromo(false)} />}
+      {showPromo && (
+        <Suspense fallback={null}>
+          <PromoAnimation onClose={() => setShowPromo(false)} />
+        </Suspense>
+      )}
       {/* Header */}
       <header className={`border-b px-6 py-4 sticky top-0 z-20 backdrop-blur-xl transition-colors ${theme === 'dark' ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-zinc-200'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">

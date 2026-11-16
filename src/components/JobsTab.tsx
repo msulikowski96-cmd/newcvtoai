@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Search, ChevronRight } from 'lucide-react';
-import { JobOffer } from '../services/gemini';
+import { JobOffer } from '../types';
 
 interface JobsTabProps {
   theme: 'light' | 'dark';

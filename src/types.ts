@@ -53,3 +53,12 @@ export interface LinkedInOptimization {
   experienceBulletPoints: string[];
   skillsToHighlight: string[];
 }
+
+export interface JobOffer {
+  title: string;
+  company: string;
+  location: string;
+  link: string;
+  snippet: string;
+  date_posted?: string;
+}
