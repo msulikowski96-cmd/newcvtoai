@@ -103,7 +103,7 @@ export const Profile: React.FC<ProfileProps> = ({
               >
                 <Camera size={16} />
               </button>
-              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" />
             </div>
             <div>
               <h2 className="text-lg font-bold">{user.name}</h2>

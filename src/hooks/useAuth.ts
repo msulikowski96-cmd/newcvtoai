@@ -33,8 +33,13 @@ export function useAuth(onAuthSuccess?: (user: User) => void) {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from our own OAuth callback page.
+      if (event.origin !== window.location.origin) return;
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        setAuthError('');
         checkAuth();
+      } else if (event.data?.type === 'OAUTH_AUTH_ERROR') {
+        setAuthError('Google login failed');
       }
     };
     window.addEventListener('message', handleMessage);
@@ -43,9 +48,12 @@ export function useAuth(onAuthSuccess?: (user: User) => void) {
 
   const handleGoogleLogin = async () => {
     try {
-      const redirectUri = `${window.location.origin}/auth/google/callback`;
-      const response = await fetch(`/api/auth/google/url?redirect_uri=${encodeURIComponent(redirectUri)}`);
-      if (!response.ok) throw new Error('Failed to get auth URL');
+      setAuthError('');
+      const response = await fetch('/api/auth/google/url');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to get auth URL');
+      }
       const { url } = await response.json();
 
       const authWindow = window.open(url, 'google_oauth_popup', 'width=600,height=700');
@@ -54,7 +62,7 @@ export function useAuth(onAuthSuccess?: (user: User) => void) {
       }
     } catch (error) {
       console.error('OAuth error:', error);
-      setAuthError('Failed to initiate Google login');
+      setAuthError(error instanceof Error ? error.message : 'Failed to initiate Google login');
     }
   };
 
@@ -111,7 +119,11 @@ export function useAuth(onAuthSuccess?: (user: User) => void) {
   };
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout failed', e);
+    }
     setUser(null);
     setView('landing');
   };

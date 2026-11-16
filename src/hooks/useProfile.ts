@@ -68,6 +68,9 @@ export function useProfile(user: User | null, setUser: React.Dispatch<React.SetS
           }
         } : null);
         alert('Profile updated!');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to update profile');
       }
     } catch (e) {
       alert('Failed to update profile');
@@ -92,11 +95,15 @@ export function useProfile(user: User | null, setUser: React.Dispatch<React.SetS
       if (res.ok) {
         const { avatar } = await res.json();
         setUser(prev => prev ? { ...prev, avatar } : null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Avatar upload failed');
       }
     } catch (e) {
       alert('Avatar upload failed');
     } finally {
       setIsLoading(false);
+      e.target.value = '';
     }
   };
 
@@ -104,11 +111,15 @@ export function useProfile(user: User | null, setUser: React.Dispatch<React.SetS
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     if (user) {
-      await fetch('/api/profile/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: profileName, bio: profileBio, theme: newTheme }),
-      });
+      try {
+        await fetch('/api/profile/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: newTheme }),
+        });
+      } catch (e) {
+        console.error('Failed to save theme', e);
+      }
     }
   };
 

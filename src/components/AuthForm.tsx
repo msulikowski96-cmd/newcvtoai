@@ -89,6 +89,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({
               <input
                 type="password"
                 required
+                minLength={view === 'register' ? 8 : undefined}
+                maxLength={128}
+                autoComplete={view === 'register' ? 'new-password' : 'current-password'}
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none transition-all"
